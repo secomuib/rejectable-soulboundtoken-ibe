@@ -1,7 +1,7 @@
 {
   "name": "rejectable-soulboundtoken-ibe",
   "version": "1.0.0",
-  "description": "RejectableNFT. ERC-721 compatible NFT token that can be rejected by the receiver of the transfer function.",
+  "description": "Rejectable Soulbound Token using Identity-Based Encryption (IBE)",
   "main": "index.js",
   "repository": {
     "type": "git",

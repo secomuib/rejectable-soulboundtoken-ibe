@@ -1,5 +1,5 @@
 # rejectable-soulboundtoken-ibe
-> RejectableNFT. ERC-721 compatible NFT token that can be rejected by the receiver of the transfer function.
+> Rejectable Soulbound Token using Identity-Based Encryption (IBE)
 
 ## 🔍 Overview
 ...
