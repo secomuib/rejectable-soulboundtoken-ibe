@@ -10,12 +10,12 @@ const func: DeployFunction = async ({
 
   const { deployer } = await getNamedAccounts();
 
-  await deploy("RejectableNFT", {
+  await deploy("RejectableSBT", {
     from: deployer,
-    args: ["Rejectable NFT test", "RNFT1"],
+    args: ["Rejectable SBT test", "RSBT1"],
     log: true
   });
 };
 
-func.tags = ["RejectableNFT"];
+func.tags = ["RejectableSBT"];
 export default func;
