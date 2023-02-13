@@ -4,14 +4,27 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./ISBT.sol";
+import "./IRejectableSBT.sol";
 import "./extensions/ISBTMetadata.sol";
 
 /// @title SBT
 /// @notice Soulbound token is an NFT token that is not transferable.
-contract SBT is Context, ERC165, ISBT, ISBTMetadata {
+contract RejectableSBT is
+    Context,
+    ERC165,
+    ISBT,
+    IRejectableSBT,
+    ISBTMetadata,
+    Ownable
+{
     using Strings for uint256;
+    using Counters for Counters.Counter;
+
+    Counters.Counter private _tokenIdCounter;
 
     // Token name
     string private _name;
@@ -21,6 +34,9 @@ contract SBT is Context, ERC165, ISBT, ISBTMetadata {
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
+
+    // Mapping from token ID to transferable owner
+    mapping(uint256 => address) private _transferableOwners;
 
     // Mapping owner address to token count
     mapping(address => uint256) private _balances;
@@ -61,21 +77,6 @@ contract SBT is Context, ERC165, ISBT, ISBTMetadata {
     {
         require(owner != address(0), "SBT: address zero is not a valid owner");
         return _balances[owner];
-    }
-
-    /**
-     * @dev See {ISBT-ownerOf}.
-     */
-    function ownerOf(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (address)
-    {
-        address owner = _owners[tokenId];
-        require(owner != address(0), "SBT: invalid token ID");
-        return owner;
     }
 
     /**
@@ -133,7 +134,8 @@ contract SBT is Context, ERC165, ISBT, ISBTMetadata {
         virtual
         returns (bool)
     {
-        address owner = SBT.ownerOf(tokenId);
+        require(_exists(tokenId), "SBT: operator query for nonexistent token");
+        address owner = RejectableSBT.ownerOf(tokenId);
         return (spender == owner);
     }
 
@@ -150,32 +152,6 @@ contract SBT is Context, ERC165, ISBT, ISBTMetadata {
     }
 
     /**
-     * @dev Mints `tokenId` and transfers it to `to`.
-     *
-     * WARNING: Usage of this method is discouraged, use {_safeMint} whenever possible
-     *
-     * Requirements:
-     *
-     * - `tokenId` must not exist.
-     * - `to` cannot be the zero address.
-     *
-     * Emits a {Mint} event.
-     */
-    function _mint(address to, uint256 tokenId) internal virtual {
-        require(to != address(0), "SBT: mint to the zero address");
-        require(!_exists(tokenId), "SBT: token already minted");
-
-        _beforeTokenTransfer(address(0), to, tokenId);
-
-        _balances[to] += 1;
-        _owners[tokenId] = to;
-
-        emit Mint(to, tokenId);
-
-        _afterTokenTransfer(address(0), to, tokenId);
-    }
-
-    /**
      * @dev Destroys `tokenId`.
      *
      * Requirements:
@@ -184,7 +160,7 @@ contract SBT is Context, ERC165, ISBT, ISBTMetadata {
      * Emits a {Burn} event.
      */
     function _burn(uint256 tokenId) internal virtual {
-        address owner = SBT.ownerOf(tokenId);
+        address owner = RejectableSBT.ownerOf(tokenId);
 
         _beforeTokenTransfer(owner, address(0), tokenId);
 
@@ -236,4 +212,121 @@ contract SBT is Context, ERC165, ISBT, ISBTMetadata {
         address,
         uint256
     ) internal virtual {}
+
+    function mint(address _to) public onlyOwner {
+        uint256 tokenId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        _mint(_to, tokenId);
+    }
+
+    function transferableOwnerOf(uint256 tokenId)
+        public
+        view
+        virtual
+        override
+        returns (address)
+    {
+        address owner = _transferableOwners[tokenId];
+
+        return owner;
+    }
+
+    /**
+     * @dev See {ISBT-ownerOf}.
+     */
+    function ownerOf(uint256 tokenId)
+        public
+        view
+        virtual
+        override
+        returns (address)
+    {
+        address owner = _owners[tokenId];
+        // removed check, because when a token is minted, the owner is address(0)
+        // require(owner != address(0), "SBT: owner query for nonexistent token");
+        return owner;
+    }
+
+    /**
+     * @dev Mints `tokenId` and transfers it to `to`.
+     *
+     * WARNING: Usage of this method is discouraged, use {_safeMint} whenever possible
+     *
+     * Requirements:
+     *
+     * - `tokenId` must not exist.
+     * - `to` cannot be the zero address.
+     *
+     * Emits a {TransferRequest} event.
+     */
+    function _mint(address to, uint256 tokenId) internal virtual {
+        require(to != address(0), "SBT: mint to the zero address");
+        require(!_exists(tokenId), "SBT: token already minted");
+
+        _beforeTokenTransfer(address(0), to, tokenId);
+
+        _transferableOwners[tokenId] = to;
+
+        emit TransferRequest(address(0), to, tokenId);
+        /* _balances[to] += 1;
+        _owners[tokenId] = to;
+
+        emit Transfer(address(0), to, tokenId); */
+
+        _afterTokenTransfer(address(0), to, tokenId);
+    }
+
+    function acceptTransfer(uint256 tokenId) public override {
+        require(
+            _transferableOwners[tokenId] == _msgSender(),
+            "RejectableSBT: accept transfer caller is not the receiver of the token"
+        );
+
+        address from = RejectableSBT.ownerOf(tokenId);
+        address to = _msgSender();
+
+        if (from != address(0)) {
+            // Perhaps previous owner is address(0), when minting
+            _balances[from] -= 1;
+        }
+        _balances[to] += 1;
+        _owners[tokenId] = to;
+
+        // remove the transferable owner from the mapping
+        _transferableOwners[tokenId] = address(0);
+
+        emit AcceptTransfer(from, to, tokenId);
+    }
+
+    function rejectTransfer(uint256 tokenId) public override {
+        require(
+            _transferableOwners[tokenId] == _msgSender(),
+            "RejectableSBT: reject transfer caller is not the receiver of the token"
+        );
+
+        address from = RejectableSBT.ownerOf(tokenId);
+        address to = _msgSender();
+
+        _transferableOwners[tokenId] = address(0);
+
+        emit RejectTransfer(from, to, tokenId);
+    }
+
+    function cancelTransfer(uint256 tokenId) public override {
+        //solhint-disable-next-line max-line-length
+        require(
+            // perhaps previous owner is address(0), when minting
+            (RejectableSBT.ownerOf(tokenId) == address(0) &&
+                owner() == _msgSender()) || _isOwner(_msgSender(), tokenId),
+            "SBT: transfer caller is not owner nor approved"
+        );
+
+        address from = RejectableSBT.ownerOf(tokenId);
+        address to = _transferableOwners[tokenId];
+
+        require(to != address(0), "RejectableSBT: token is not transferable");
+        _transferableOwners[tokenId] = address(0);
+
+        emit CancelTransfer(from, to, tokenId);
+    }
 }

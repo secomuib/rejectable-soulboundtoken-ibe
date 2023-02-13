@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.7;
 
-import "../SBT.sol";
+import "../RejectableSBT.sol";
 import "./ISBTEnumerable.sol";
 
 /**
@@ -9,7 +9,7 @@ import "./ISBTEnumerable.sol";
  * enumerability of all the token ids in the contract as well as all token ids owned by each
  * account.
  */
-abstract contract SBTEnumerable is SBT, ISBTEnumerable {
+abstract contract SBTEnumerable is RejectableSBT, ISBTEnumerable {
     // Mapping from owner to list of owned token IDs
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
 
@@ -29,7 +29,7 @@ abstract contract SBTEnumerable is SBT, ISBTEnumerable {
         public
         view
         virtual
-        override(IERC165, SBT)
+        override(IERC165, RejectableSBT)
         returns (bool)
     {
         return
@@ -48,7 +48,7 @@ abstract contract SBTEnumerable is SBT, ISBTEnumerable {
         returns (uint256)
     {
         require(
-            index < SBT.balanceOf(owner),
+            index < RejectableSBT.balanceOf(owner),
             "SBTEnumerable: owner index out of bounds"
         );
         return _ownedTokens[owner][index];

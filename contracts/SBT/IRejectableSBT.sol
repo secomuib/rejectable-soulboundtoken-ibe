@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "../SBT/ISBT.sol";
 
 /**
- * @title  Rejectable NFT interface
- * @dev Iterface that inherits from a Non-Fungible Token Standard, and it also adds
+ * @title  Rejectable SBT interface
+ * @dev Iterface that inherits from a Soulbound Token Standard, and it also adds
  * the possibility to be rejected by the receiver of the transfer function.
  */
-interface IRejectableNFT is IERC721 {
+interface IRejectableSBT is ISBT {
     /**
      * @dev Emitted when `tokenId` token is proposed to be transferred from `from` sender to `to` receiver.
      */
@@ -32,6 +32,12 @@ interface IRejectableNFT is IERC721 {
      * @dev Emitted when sender `from` cancels `tokenId` transfer from `from` to `to`.
      */
     event CancelTransfer(
+        address indexed from,
+        address indexed to,
+        uint256 indexed tokenId
+    );
+
+    event AcceptTransfer(
         address indexed from,
         address indexed to,
         uint256 indexed tokenId

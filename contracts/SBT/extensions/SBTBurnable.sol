@@ -3,13 +3,13 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 
-import "../SBT.sol";
+import "../RejectableSBT.sol";
 
 /**
  * @title SBT Burnable Token
  * @dev SBT Token that can be burned (destroyed).
  */
-abstract contract SBTBurnable is Context, SBT {
+abstract contract SBTBurnable is Context, RejectableSBT {
     /**
      * @dev Burns `tokenId`. See {SBT-_burn}.
      *
