@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../SBT/ISBT.sol";
+import "./ISBT.sol";
 
 /**
  * @title  Rejectable SBT interface

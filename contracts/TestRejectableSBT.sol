@@ -10,11 +10,9 @@ import "./SBT/RejectableSBT.sol";
 /// @title Test SBT
 /// @notice Soulbound token test contract
 contract TestRejectableSBT is RejectableSBT {
-
     constructor(
         string memory name_,
         string memory symbol_,
         string memory baseTokenURI_
-    ) RejectableSBT(name_, symbol_) {
-    }
+    ) RejectableSBT(name_, symbol_) {}
 }

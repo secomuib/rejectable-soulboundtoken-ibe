@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.7;
 
-import "../ISBT.sol";
+import "./ISBT.sol";
 
 /**
  * @title SBT Soulbound Token Standard, optional metadata extension

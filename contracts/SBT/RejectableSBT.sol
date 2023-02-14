@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./ISBT.sol";
 import "./IRejectableSBT.sol";
-import "./extensions/ISBTMetadata.sol";
+import "./ISBTMetadata.sol";
 
 /// @title SBT
 /// @notice Soulbound token is an NFT token that is not transferable.
