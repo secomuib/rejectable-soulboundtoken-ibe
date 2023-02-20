@@ -23,11 +23,8 @@ describe("RejectableSBT", () => {
 
     await deployments.fixture("RejectableSBT", { fallbackToGlobal: false });
 
-    const rejectableSBTDeployed = await deployments.get("RejectableSBT");
-    rejectableSBT = await ethers.getContractAt(
-      "RejectableSBT",
-      rejectableSBTDeployed.address
-    );
+    const RejectableSBT = await ethers.getContractFactory("RejectableSBT");
+    rejectableSBT = await RejectableSBT.deploy(RSBT_NAME, RSBT_SYMBOL);
   });
 
   /**
