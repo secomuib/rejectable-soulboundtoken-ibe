@@ -1,9 +1,10 @@
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployments, ethers, waffle } from "hardhat";
+import { ethers, waffle } from "hardhat";
 import chai from "chai";
 import { Contract } from "ethers";
+import CryptID from "@cryptid/cryptid-js";
 
 chai.use(waffle.solidity);
 const { expect } = chai;
@@ -17,11 +18,31 @@ describe("RejectableSBT", () => {
   let owner: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
+  let cryptID: CryptID;
 
   before(async () => {
     [owner, user1, user2] = await ethers.getSigners();
 
-    await deployments.fixture("RejectableSBT", { fallbackToGlobal: false });
+    cryptID = await CryptID.getInstance();
+    const cryptIDSetup = cryptID.setup(CryptID.SecurityLevel.LOWEST);
+
+    expect(cryptIDSetup.success).to.be.true;
+
+    console.log(cryptIDSetup.publicParameters);
+
+    const message = "Ironic.";
+    const identity = {
+      name: "Darth Plagueis"
+    };
+    console.log(identity);
+
+    const encryptResult = cryptID.encrypt(
+      cryptIDSetup.publicParameters,
+      identity,
+      message
+    );
+
+    console.log(encryptResult);
 
     const RejectableSBT = await ethers.getContractFactory("RejectableSBT");
     rejectableSBT = await RejectableSBT.deploy(RSBT_NAME, RSBT_SYMBOL);
