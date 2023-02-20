@@ -23,6 +23,13 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
+"@cryptid/cryptid-js@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@cryptid/cryptid-js/-/cryptid-js-1.0.1.tgz#a9d47add373e8a572500adbe081b38b3dbc0d6ca"
+  integrity sha512-+nTLpsRv9t8oXHCNF8fVNDWHJ0bYbPuvuhVpbww2Bay9LVUE/f30/3aVzZcr7Np744TXLtjAQzrPriM4zqSkRg==
+  dependencies:
+    base64-js "^1.3.0"
+
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
@@ -2310,7 +2317,7 @@ base-x@^3.0.2, base-x@^3.0.8:
   dependencies:
     safe-buffer "^5.0.1"
 
-base64-js@^1.3.1:
+base64-js@^1.3.0, base64-js@^1.3.1:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.5.1.tgz#1b1b440160a5bf7ad40b650f095963481903930a"
   integrity sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
