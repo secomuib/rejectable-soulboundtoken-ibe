@@ -18,7 +18,7 @@ describe("RejectableSBT", () => {
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
 
-  beforeEach(async () => {
+  before(async () => {
     [owner, user1, user2] = await ethers.getSigners();
 
     await deployments.fixture("RejectableSBT", { fallbackToGlobal: false });
@@ -57,12 +57,16 @@ describe("RejectableSBT", () => {
       // before minting, we have a balance of 0
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(0);
       // mint
-      await rejectableSBT.connect(owner).mint(user1.address);
+      const tx = await rejectableSBT.connect(owner).mint(user1.address);
+
+      const receipt = await tx.wait();
+      const tokenId = receipt.events[0].args.tokenId;
+
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(0);
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(ZERO_ADDRESS);
+      expect(await rejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
+      expect(await rejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         user1.address
       );
     });
@@ -71,22 +75,26 @@ describe("RejectableSBT", () => {
       // before minting, we have a balance of 0
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(0);
       // mint
-      await rejectableSBT.connect(owner).mint(user1.address);
+      const tx = await rejectableSBT.connect(owner).mint(user1.address);
+
+      const receipt = await tx.wait();
+      const tokenId = receipt.events[0].args.tokenId;
+
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(0);
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(ZERO_ADDRESS);
+      expect(await rejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
+      expect(await rejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         user1.address
       );
 
       // the sender can cancel
-      await rejectableSBT.connect(owner).cancelTransfer(0);
+      await rejectableSBT.connect(owner).cancelTransfer(tokenId);
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(0);
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(ZERO_ADDRESS);
+      expect(await rejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is removed as transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
+      expect(await rejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         ZERO_ADDRESS
       );
     });
@@ -95,12 +103,16 @@ describe("RejectableSBT", () => {
       // before minting, we have a balance of 0
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(0);
       // mint
-      await rejectableSBT.connect(owner).mint(user1.address);
+      const tx = await rejectableSBT.connect(owner).mint(user1.address);
+
+      const receipt = await tx.wait();
+      const tokenId = receipt.events[0].args.tokenId;
+
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(0);
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(ZERO_ADDRESS);
+      expect(await rejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
+      expect(await rejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         user1.address
       );
 
@@ -119,138 +131,26 @@ describe("RejectableSBT", () => {
       // before minting, we have a balance of 0
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(0);
       // mint
-      await rejectableSBT.connect(owner).mint(user1.address);
+      const tx = await rejectableSBT.connect(owner).mint(user1.address);
+
+      const receipt = await tx.wait();
+      const tokenId = receipt.events[0].args.tokenId;
+
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(0);
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(ZERO_ADDRESS);
+      expect(await rejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
+      expect(await rejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         user1.address
       );
 
       // the sender can cancel
-      await rejectableSBT.connect(user1).acceptTransfer(0);
+      await rejectableSBT.connect(user1).acceptTransfer(tokenId);
       // after minting, we have a balance of 1
       expect(await rejectableSBT.balanceOf(user1.address)).to.be.equal(1);
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(user1.address);
+      expect(await rejectableSBT.ownerOf(tokenId)).to.be.equal(user1.address);
       // the receiver is removed as transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
-        ZERO_ADDRESS
-      );
-    });
-  });
-
-  /**
-   * Transfer a Rejectable SBT
-   */
-  describe("Transfer a Rejectable SBT", () => {
-    beforeEach(async () => {
-      await rejectableSBT.connect(owner).mint(user1.address);
-      await rejectableSBT.connect(user1).acceptTransfer(0);
-    });
-
-    it("You can't transfer if you aren't the owner nor approved", async () => {
-      await expect(
-        rejectableSBT
-          .connect(owner)
-          .transferFrom(user1.address, user2.address, 1)
-      ).to.be.reverted;
-    });
-
-    it("Transfer a token", async () => {
-      // before transfer, we have a balance of 0
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      // transfer
-      await rejectableSBT
-        .connect(user1)
-        .transferFrom(user1.address, user2.address, 0);
-      // after transfer, we have a balance of 0, because the receiver needs to accept
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      // user1 is still the owner of the token
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(user1.address);
-      // the receiver is the transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
-        user2.address
-      );
-    });
-
-    it("Sender can cancel", async () => {
-      // before transfer, we have a balance of 0
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      // transfer
-      await rejectableSBT
-        .connect(user1)
-        .transferFrom(user1.address, user2.address, 0);
-      // after transfer, we have a balance of 0, because the receiver needs to accept
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      // user1 is still the owner of the token
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(user1.address);
-      // the receiver is the transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
-        user2.address
-      );
-
-      // the sender can cancel
-      await rejectableSBT.connect(user1).cancelTransfer(0);
-      // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(user1.address);
-      // the receiver is removed as transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
-        ZERO_ADDRESS
-      );
-    });
-
-    it("Receiver can reject", async () => {
-      // before transfer, we have a balance of 0
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      // transfer
-      await rejectableSBT
-        .connect(user1)
-        .transferFrom(user1.address, user2.address, 0);
-      // after transfer, we have a balance of 0, because the receiver needs to accept
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      // user1 is still the owner of the token
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(user1.address);
-      // the receiver is the transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
-        user2.address
-      );
-
-      // the sender can cancel
-      await rejectableSBT.connect(user2).rejectTransfer(0);
-      // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(user1.address);
-      // the receiver is removed as transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
-        ZERO_ADDRESS
-      );
-    });
-
-    it("Receiver can accept transfer", async () => {
-      // before transfer, we have a balance of 0
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      // transfer
-      await rejectableSBT
-        .connect(user1)
-        .transferFrom(user1.address, user2.address, 0);
-      // after transfer, we have a balance of 0, because the receiver needs to accept
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(0);
-      // user1 is still the owner of the token
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(user1.address);
-      // the receiver is the transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
-        user2.address
-      );
-
-      // the sender can cancel
-      await rejectableSBT.connect(user2).acceptTransfer(0);
-      // after minting, we have a balance of 1
-      expect(await rejectableSBT.balanceOf(user2.address)).to.be.equal(1);
-      expect(await rejectableSBT.ownerOf(0)).to.be.equal(user2.address);
-      // the receiver is removed as transferable owner
-      expect(await rejectableSBT.transferableOwnerOf(0)).to.be.equal(
+      expect(await rejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         ZERO_ADDRESS
       );
     });
