@@ -4,7 +4,6 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./ISBT.sol";
@@ -22,11 +21,8 @@ contract RejectableSBT is
     AccessControl
 {
     using Strings for uint256;
-    using Counters for Counters.Counter;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-
-    Counters.Counter private _tokenIdCounter;
 
     // Token name
     string private _name;
