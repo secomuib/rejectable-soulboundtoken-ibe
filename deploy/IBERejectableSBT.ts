@@ -24,7 +24,9 @@ const func: DeployFunction = async ({
       BigNumber.from(cryptIDSetup.publicParameters.subgroupOrder).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.pointP.x).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.pointP.y).toHexString(),
-      BigNumber.from(cryptIDSetup.publicParameters.pointPpublic.x).toHexString(),
+      BigNumber.from(
+        cryptIDSetup.publicParameters.pointPpublic.x
+      ).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.pointPpublic.y).toHexString()
     ],
     log: true
