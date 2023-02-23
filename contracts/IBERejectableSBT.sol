@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./SBT/RejectableSBT.sol";
 
-/// @title Test SBT
+/// @title Test SBT with IBE parameters
 /// @notice Soulbound token test contract
-contract TestRejectableSBT is RejectableSBT {
+contract IBERejectableSBT is RejectableSBT {
     // public parameters of the IBE algorithm
     bytes public fieldOrder;
     bytes public subgroupOrder;
