@@ -15,14 +15,14 @@ const RSBT_SYMBOL = "RSBT1";
 
 describe("IBERejectableSBT", () => {
   let ibeRejectableSBT: Contract;
-  let owner: SignerWithAddress;
-  let user1: SignerWithAddress;
-  let user2: SignerWithAddress;
+  let middleware: SignerWithAddress;
+  let sender: SignerWithAddress;
+  let receiver: SignerWithAddress;
   let cryptID: CryptID;
   let cryptIDSetup: CryptID.SetupResult;
 
   before(async () => {
-    [owner, user1, user2] = await ethers.getSigners();
+    [middleware, sender, receiver] = await ethers.getSigners();
 
     cryptID = await CryptID.getInstance();
     cryptIDSetup = cryptID.setup(CryptID.SecurityLevel.LOWEST);
@@ -138,50 +138,54 @@ describe("IBERejectableSBT", () => {
    * Mint a Rejectable SBT
    */
   describe("Mint a Rejectable SBT", () => {
-    it("Non owner can't mint", async () => {
-      await expect(ibeRejectableSBT.connect(user1).mint(user1.address)).to.be
+    it("Non middleware can't mint", async () => {
+      await expect(ibeRejectableSBT.connect(sender).mint(sender.address)).to.be
         .reverted;
     });
 
-    it("Owner can mint", async () => {
+    it("Middleware can mint", async () => {
       // before minting, we have a balance of 0
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       // mint
-      const tx = await ibeRejectableSBT.connect(owner).mint(user1.address);
+      const tx = await ibeRejectableSBT
+        .connect(middleware)
+        .mint(sender.address);
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
 
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        user1.address
+        sender.address
       );
     });
 
     it("Sender can cancel", async () => {
       // before minting, we have a balance of 0
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       // mint
-      const tx = await ibeRejectableSBT.connect(owner).mint(user1.address);
+      const tx = await ibeRejectableSBT
+        .connect(middleware)
+        .mint(sender.address);
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
 
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        user1.address
+        sender.address
       );
 
       // the sender can cancel
-      await ibeRejectableSBT.connect(owner).cancelTransfer(tokenId);
+      await ibeRejectableSBT.connect(middleware).cancelTransfer(tokenId);
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is removed as transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
@@ -191,25 +195,27 @@ describe("IBERejectableSBT", () => {
 
     it("Receiver can reject", async () => {
       // before minting, we have a balance of 0
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       // mint
-      const tx = await ibeRejectableSBT.connect(owner).mint(user1.address);
+      const tx = await ibeRejectableSBT
+        .connect(middleware)
+        .mint(sender.address);
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
 
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        user1.address
+        sender.address
       );
 
       // the sender can cancel
-      await ibeRejectableSBT.connect(user1).rejectTransfer(0);
+      await ibeRejectableSBT.connect(sender).rejectTransfer(0);
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(0)).to.be.equal(ZERO_ADDRESS);
       // the receiver is removed as transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(0)).to.be.equal(
@@ -219,27 +225,29 @@ describe("IBERejectableSBT", () => {
 
     it("Receiver can accept transfer", async () => {
       // before minting, we have a balance of 0
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       // mint
-      const tx = await ibeRejectableSBT.connect(owner).mint(user1.address);
+      const tx = await ibeRejectableSBT
+        .connect(middleware)
+        .mint(sender.address);
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
 
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        user1.address
+        sender.address
       );
 
       // the sender can cancel
-      await ibeRejectableSBT.connect(user1).acceptTransfer(tokenId);
+      await ibeRejectableSBT.connect(sender).acceptTransfer(tokenId);
       // after minting, we have a balance of 1
-      expect(await ibeRejectableSBT.balanceOf(user1.address)).to.be.equal(1);
+      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(1);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(
-        user1.address
+        sender.address
       );
       // the receiver is removed as transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
