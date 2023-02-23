@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./ISBT.sol";
 import "./IRejectableSBT.sol";
@@ -19,10 +19,12 @@ contract RejectableSBT is
     ISBT,
     IRejectableSBT,
     ISBTMetadata,
-    Ownable
+    AccessControl
 {
     using Strings for uint256;
     using Counters for Counters.Counter;
+
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     Counters.Counter private _tokenIdCounter;
 
@@ -47,6 +49,9 @@ contract RejectableSBT is
     constructor(string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
+
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setupRole(MINTER_ROLE, _msgSender());
     }
 
     /**
@@ -56,12 +61,13 @@ contract RejectableSBT is
         public
         view
         virtual
-        override(ERC165, IERC165)
+        override(ERC165, IERC165, AccessControl)
         returns (bool)
     {
         return
             interfaceId == type(ISBT).interfaceId ||
             interfaceId == type(ISBTMetadata).interfaceId ||
+            interfaceId == type(AccessControl).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -213,12 +219,6 @@ contract RejectableSBT is
         uint256
     ) internal virtual {}
 
-    function mint(address _to) public onlyOwner {
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-        _mint(_to, tokenId);
-    }
-
     function transferableOwnerOf(uint256 tokenId)
         public
         view
@@ -317,7 +317,8 @@ contract RejectableSBT is
         require(
             // perhaps previous owner is address(0), when minting
             (RejectableSBT.ownerOf(tokenId) == address(0) &&
-                owner() == _msgSender()) || _isOwner(_msgSender(), tokenId),
+                hasRole(MINTER_ROLE, _msgSender())) ||
+                _isOwner(_msgSender(), tokenId),
             "SBT: transfer caller is not owner nor approved"
         );
 
