@@ -19,12 +19,13 @@ describe("IBERejectableSBT", () => {
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
   let cryptID: CryptID;
+  let cryptIDSetup: CryptID.SetupResult;
 
   before(async () => {
     [owner, user1, user2] = await ethers.getSigners();
 
     cryptID = await CryptID.getInstance();
-    const cryptIDSetup = cryptID.setup(CryptID.SecurityLevel.LOWEST);
+    cryptIDSetup = cryptID.setup(CryptID.SecurityLevel.LOWEST);
 
     expect(cryptIDSetup.success).to.be.true;
 
@@ -103,6 +104,33 @@ describe("IBERejectableSBT", () => {
     it("Check name and symbol", async () => {
       expect(await ibeRejectableSBT.name()).to.be.equal(RSBT_NAME);
       expect(await ibeRejectableSBT.symbol()).to.be.equal(RSBT_SYMBOL);
+    });
+
+    it("Check IBE public parameters", async () => {
+      expect(await ibeRejectableSBT.fieldOrder()).to.be.equal(
+        BigNumber.from(cryptIDSetup.publicParameters.fieldOrder).toHexString()
+      );
+      expect(await ibeRejectableSBT.subgroupOrder()).to.be.equal(
+        BigNumber.from(
+          cryptIDSetup.publicParameters.subgroupOrder
+        ).toHexString()
+      );
+      expect(await ibeRejectableSBT.pointP_x()).to.be.equal(
+        BigNumber.from(cryptIDSetup.publicParameters.pointP.x).toHexString()
+      );
+      expect(await ibeRejectableSBT.pointP_y()).to.be.equal(
+        BigNumber.from(cryptIDSetup.publicParameters.pointP.y).toHexString()
+      );
+      expect(await ibeRejectableSBT.pointPpublic_x()).to.be.equal(
+        BigNumber.from(
+          cryptIDSetup.publicParameters.pointPpublic.x
+        ).toHexString()
+      );
+      expect(await ibeRejectableSBT.pointPpublic_y()).to.be.equal(
+        BigNumber.from(
+          cryptIDSetup.publicParameters.pointPpublic.y
+        ).toHexString()
+      );
     });
   });
 
