@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 import "./SBT/RejectableSBT.sol";
 
 /// @title Test SBT with IBE parameters
 /// @notice Soulbound token test contract
-contract IBERejectableSBT is RejectableSBT {
+contract IBERejectableSBT is RejectableSBT, EIP712 {
     // public parameters of the IBE algorithm
     bytes public fieldOrder;
     bytes public subgroupOrder;
@@ -27,7 +25,7 @@ contract IBERejectableSBT is RejectableSBT {
         bytes memory pointP_y_,
         bytes memory pointPpublic_x_,
         bytes memory pointPpublic_y_
-    ) RejectableSBT(name_, symbol_) {
+    ) RejectableSBT(name_, symbol_) EIP712("IBERejectableSBT", "1") {
         fieldOrder = fieldOrder_;
         subgroupOrder = subgroupOrder_;
         pointP_x = pointP_x_;
