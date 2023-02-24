@@ -359,7 +359,7 @@ describe("IBERejectableSBT", () => {
       const messageDataPrivateKey = await ibeRejectableSBT.messageData(
         eventTokenId
       );
-      
+
       const privateKey = {
         x: BigNumber.from(messageDataPrivateKey.privateKey_x).toString(),
         y: BigNumber.from(messageDataPrivateKey.privateKey_y).toString()
@@ -371,15 +371,22 @@ describe("IBERejectableSBT", () => {
         },
         cipherV: messageDataPrivateKey.cipherV,
         cipherW: messageDataPrivateKey.cipherW
-      }
+      };
 
       const decryptResult = cryptID.decrypt(
         cryptIDSetup.publicParameters,
         extractResult.privateKey,
         encryptResult.ciphertext
       );
-  
-      console.log(decryptResult);
+
+      // check if the message is decrypted correctly
+      expect(decryptResult.success).to.be.true;
+      expect(decryptResult.plaintext).to.be.equal(message);
+
+      // check if the hash of the message is correct
+      expect(
+        utils.keccak256(utils.toUtf8Bytes(decryptResult.plaintext))
+      ).to.be.equal(messageDataPrivateKey.messageHash);
     });
   });
 });
