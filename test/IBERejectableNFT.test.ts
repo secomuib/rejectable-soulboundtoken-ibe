@@ -34,6 +34,7 @@ describe("IBERejectableSBT", () => {
     ibeRejectableSBT = await IBERejectableSBT.deploy(
       RSBT_NAME,
       RSBT_SYMBOL,
+      middleware.address,
       BigNumber.from(cryptIDSetup.publicParameters.fieldOrder).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.subgroupOrder).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.pointP.x).toHexString(),
@@ -283,37 +284,11 @@ describe("IBERejectableSBT", () => {
         identity,
         message
       );
-
-      /*  console.log(encryptResult);
-  
-      const extractResult = cryptID.extract(
-        cryptIDSetup.publicParameters,
-        cryptIDSetup.masterSecret,
-        identity
-      );
-      if (!extractResult.success) {
-        console.log("Failed to extract :(");
-        return;
-      }
-  
-      console.log(extractResult);
-  
-      const decryptResult = cryptID.decrypt(
-        cryptIDSetup.publicParameters,
-        extractResult.privateKey,
-        encryptResult.ciphertext
-      );
-      if (!decryptResult.success) {
-        console.log("Failed to decrypt :(");
-        return;
-      }
-  
-      console.log(decryptResult); */
     });
 
     it("When receiver accepts transfer, middleware stores private key to decrypt the message", async () => {
       // mint
-      const tx = await ibeRejectableSBT
+      const txMint = await ibeRejectableSBT
         .connect(sender)
         .mint(
           identity.idReceiver,
@@ -324,12 +299,85 @@ describe("IBERejectableSBT", () => {
           encryptResult.ciphertext.cipherV,
           encryptResult.ciphertext.cipherW
         );
-
-      const receipt = await tx.wait();
-      const tokenId = receipt.events[0].args.tokenId;
+      const receiptMint = await txMint.wait();
+      const tokenId = receiptMint.events[0].args.tokenId;
 
       // the receiver accepts
-      await ibeRejectableSBT.connect(receiver).acceptTransfer(tokenId);
+      const txAccept = await ibeRejectableSBT
+        .connect(receiver)
+        .acceptTransfer(tokenId);
+      const receiptAccept = await txAccept.wait();
+
+      // check event
+      expect(receiptAccept.events[0].event).to.be.equal("AcceptTransfer");
+      expect(receiptAccept.events[0].args.from).to.be.equal(
+        ethers.constants.AddressZero
+      );
+      expect(receiptAccept.events[0].args.to).to.be.equal(receiver.address);
+      expect(receiptAccept.events[0].args.tokenId).to.be.equal(tokenId);
+
+      // the middleware reads the event and stores the private key
+      /*
+        This must be done in the middleware with this code:
+
+        ibeRejectableSBT.on("AcceptTransfer", (sender, receiver, tokenId) => {
+          console.log("AcceptTransfer", sender, receiver, tokenId);
+        });
+      */
+
+      const eventTokenId = receiptAccept.events[0].args.tokenId;
+
+      const messageDataOnAccept = await ibeRejectableSBT.messageData(
+        eventTokenId
+      );
+
+      const eventIdentity = {
+        idReceiver: messageDataOnAccept.idReceiver,
+        idTimestamp: messageDataOnAccept.idTimestamp
+      };
+
+      // extract private key from master secret and public parameters
+      const extractResult = cryptID.extract(
+        cryptIDSetup.publicParameters,
+        cryptIDSetup.masterSecret,
+        eventIdentity
+      );
+
+      // the middleware sends the private key to the receiver
+      await ibeRejectableSBT
+        .connect(middleware)
+        .sendPrivateKey(
+          eventTokenId,
+          BigNumber.from(extractResult.privateKey.x).toHexString(),
+          BigNumber.from(extractResult.privateKey.y).toHexString()
+        );
+
+      // now the receiver can decrypt the message
+      const messageDataPrivateKey = await ibeRejectableSBT.messageData(
+        eventTokenId
+      );
+      
+      const privateKey = {
+        privateKey: {
+          x: BigNumber.from(messageDataPrivateKey.privateKey_x),
+          y: BigNumber.from(messageDataPrivateKey.privateKey_y)
+        },
+        success: true
+      };
+
+      console.log(cryptIDSetup.publicParameters);
+      console.log(privateKey);
+      console.log(encryptResult.ciphertext);
+
+      const decryptResult = cryptID.decrypt(
+        cryptIDSetup.publicParameters,
+        privateKey,
+        encryptResult.ciphertext
+      );
+
+      console.log(1);
+  
+      console.log(decryptResult);
     });
   });
 });

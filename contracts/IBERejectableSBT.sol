@@ -90,7 +90,7 @@ contract IBERejectableSBT is RejectableSBT {
         return tokenId;
     }
 
-    function setPrivateKey(
+    function sendPrivateKey(
         uint256 tokenId,
         bytes memory privateKey_x,
         bytes memory privateKey_y
