@@ -87,9 +87,9 @@ describe("IBERejectableSBT", () => {
   });
 
   /**
-   * Mint a Rejectable SBT
+   * Mint, Accept, Cancel, Reject a Rejectable SBT
    */
-  describe("Mint a Rejectable SBT", () => {
+  describe("Mint, Accept, Cancel, Reject a Rejectable SBT", () => {
     const message = "Test message";
     let identity;
     let encryptResult;
@@ -105,32 +105,6 @@ describe("IBERejectableSBT", () => {
         identity,
         message
       );
-
-      /*  console.log(encryptResult);
-  
-      const extractResult = cryptID.extract(
-        cryptIDSetup.publicParameters,
-        cryptIDSetup.masterSecret,
-        identity
-      );
-      if (!extractResult.success) {
-        console.log("Failed to extract :(");
-        return;
-      }
-  
-      console.log(extractResult);
-  
-      const decryptResult = cryptID.decrypt(
-        cryptIDSetup.publicParameters,
-        extractResult.privateKey,
-        encryptResult.ciphertext
-      );
-      if (!decryptResult.success) {
-        console.log("Failed to decrypt :(");
-        return;
-      }
-  
-      console.log(decryptResult); */
     });
 
     it("Sender can mint", async () => {
@@ -287,6 +261,75 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         ethers.constants.AddressZero
       );
+    });
+  });
+
+  /**
+   * Middleware sends private key to receiver
+   */
+  describe("Middleware sends private key to receiver", () => {
+    const message = "Test message";
+    let identity;
+    let encryptResult;
+
+    before(async () => {
+      identity = {
+        idReceiver: receiver.address,
+        idTimestamp: Math.floor(new Date().getTime() / 1000)
+      };
+
+      encryptResult = cryptID.encrypt(
+        cryptIDSetup.publicParameters,
+        identity,
+        message
+      );
+
+      /*  console.log(encryptResult);
+  
+      const extractResult = cryptID.extract(
+        cryptIDSetup.publicParameters,
+        cryptIDSetup.masterSecret,
+        identity
+      );
+      if (!extractResult.success) {
+        console.log("Failed to extract :(");
+        return;
+      }
+  
+      console.log(extractResult);
+  
+      const decryptResult = cryptID.decrypt(
+        cryptIDSetup.publicParameters,
+        extractResult.privateKey,
+        encryptResult.ciphertext
+      );
+      if (!decryptResult.success) {
+        console.log("Failed to decrypt :(");
+        return;
+      }
+  
+      console.log(decryptResult); */
+    });
+
+    it("When receiver accepts transfer, middleware stores private key to decrypt the message", async () => {
+      // mint
+      const tx = await ibeRejectableSBT
+        .connect(sender)
+        .mint(
+          identity.idReceiver,
+          identity.idTimestamp,
+          utils.keccak256(utils.toUtf8Bytes(message)),
+          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
+          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
+          encryptResult.ciphertext.cipherV,
+          encryptResult.ciphertext.cipherW
+        );
+
+      const receipt = await tx.wait();
+      const tokenId = receipt.events[0].args.tokenId;
+
+      // the receiver accepts
+      await ibeRejectableSBT.connect(receiver).acceptTransfer(tokenId);
     });
   });
 });
