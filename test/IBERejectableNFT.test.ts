@@ -106,6 +106,7 @@ describe("IBERejectableSBT", () => {
         identity,
         message
       );
+      expect(encryptResult.success).to.be.true;
     });
 
     it("Sender can mint", async () => {
@@ -284,6 +285,7 @@ describe("IBERejectableSBT", () => {
         identity,
         message
       );
+      expect(encryptResult.success).to.be.true;
     });
 
     it("When receiver accepts transfer, middleware stores private key to decrypt the message", async () => {
@@ -342,6 +344,7 @@ describe("IBERejectableSBT", () => {
         cryptIDSetup.masterSecret,
         eventIdentity
       );
+      expect(extractResult.success).to.be.true;
 
       // the middleware sends the private key to the receiver
       await ibeRejectableSBT
@@ -372,11 +375,11 @@ describe("IBERejectableSBT", () => {
 
       const decryptResult = cryptID.decrypt(
         cryptIDSetup.publicParameters,
-        privateKey,
-        ciphertext
+        extractResult.privateKey,
+        encryptResult.ciphertext
       );
   
-      console.log(decryptResult.plaintext);
+      console.log(decryptResult);
     });
   });
 });
