@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers, waffle } from "hardhat";
 import chai from "chai";
-import { BigNumber, Contract } from "ethers";
+import { BigNumber, Contract, utils } from "ethers";
 import CryptID from "@cryptid/cryptid-js";
 
 chai.use(waffle.solidity);
@@ -28,54 +28,6 @@ describe("IBERejectableSBT", () => {
     cryptIDSetup = cryptID.setup(CryptID.SecurityLevel.LOWEST);
 
     expect(cryptIDSetup.success).to.be.true;
-
-    console.log(
-      "=================================================================================="
-    );
-    console.log(
-      "====================== publicParameters =========================================="
-    );
-    console.log(
-      "=================================================================================="
-    );
-    console.log(cryptIDSetup.publicParameters);
-
-    console.log(
-      "=================================================================================="
-    );
-    console.log(
-      "====================== masterSecret =============================================="
-    );
-    console.log(
-      "=================================================================================="
-    );
-    console.log(cryptIDSetup.masterSecret);
-
-    console.log(
-      "=================================================================================="
-    );
-    console.log(
-      "====================== privateKey ================================================"
-    );
-    console.log(
-      "=================================================================================="
-    );
-    console.log(cryptIDSetup.privateKey);
-
-    const message = "Ironic.";
-    const identity = {
-      idReceiver: 1,
-      idTimestamp: Math.floor(new Date().getTime() / 1000)
-    };
-    console.log(identity);
-
-    const encryptResult = cryptID.encrypt(
-      cryptIDSetup.publicParameters,
-      identity,
-      message
-    );
-
-    console.log(encryptResult);
 
     const IBERejectableSBT = await ethers.getContractFactory(
       "IBERejectableSBT"
@@ -139,28 +91,74 @@ describe("IBERejectableSBT", () => {
    * Mint a Rejectable SBT
    */
   describe("Mint a Rejectable SBT", () => {
-    it("Non middleware can't mint", async () => {
-      await expect(ibeRejectableSBT.connect(sender).mint(sender.address)).to.be
-        .reverted;
+    const message = "Test message";
+    let identity;
+    let encryptResult;
+
+    before(async () => {
+      identity = {
+        idReceiver: receiver.address,
+        idTimestamp: Math.floor(new Date().getTime() / 1000)
+      };
+
+      encryptResult = cryptID.encrypt(
+        cryptIDSetup.publicParameters,
+        identity,
+        message
+      );
+
+      /*  console.log(encryptResult);
+  
+      const extractResult = cryptID.extract(
+        cryptIDSetup.publicParameters,
+        cryptIDSetup.masterSecret,
+        identity
+      );
+      if (!extractResult.success) {
+        console.log("Failed to extract :(");
+        return;
+      }
+  
+      console.log(extractResult);
+  
+      const decryptResult = cryptID.decrypt(
+        cryptIDSetup.publicParameters,
+        extractResult.privateKey,
+        encryptResult.ciphertext
+      );
+      if (!decryptResult.success) {
+        console.log("Failed to decrypt :(");
+        return;
+      }
+  
+      console.log(decryptResult); */
     });
 
-    it("Middleware can mint", async () => {
+    it("Sender can mint", async () => {
       // before minting, we have a balance of 0
       expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       // mint
       const tx = await ibeRejectableSBT
-        .connect(middleware)
-        .mint(sender.address);
+        .connect(sender)
+        .mint(
+          identity.idReceiver,
+          identity.idTimestamp,
+          utils.keccak256(utils.toUtf8Bytes(message)),
+          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
+          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
+          encryptResult.ciphertext.cipherV,
+          encryptResult.ciphertext.cipherW
+        );
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
 
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        sender.address
+        receiver.address
       );
     });
 
@@ -169,24 +167,32 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       // mint
       const tx = await ibeRejectableSBT
-        .connect(middleware)
-        .mint(sender.address);
+        .connect(sender)
+        .mint(
+          identity.idReceiver,
+          identity.idTimestamp,
+          utils.keccak256(utils.toUtf8Bytes(message)),
+          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
+          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
+          encryptResult.ciphertext.cipherV,
+          encryptResult.ciphertext.cipherW
+        );
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
 
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        sender.address
+        receiver.address
       );
 
       // the sender can cancel
-      await ibeRejectableSBT.connect(middleware).cancelTransfer(tokenId);
+      await ibeRejectableSBT.connect(sender).cancelTransfer(tokenId);
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is removed as transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
@@ -199,24 +205,32 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       // mint
       const tx = await ibeRejectableSBT
-        .connect(middleware)
-        .mint(sender.address);
+        .connect(sender)
+        .mint(
+          identity.idReceiver,
+          identity.idTimestamp,
+          utils.keccak256(utils.toUtf8Bytes(message)),
+          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
+          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
+          encryptResult.ciphertext.cipherV,
+          encryptResult.ciphertext.cipherW
+        );
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
 
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        sender.address
+        receiver.address
       );
 
-      // the sender can cancel
-      await ibeRejectableSBT.connect(sender).rejectTransfer(0);
+      // the receiver can reject
+      await ibeRejectableSBT.connect(receiver).rejectTransfer(0);
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(0)).to.be.equal(ZERO_ADDRESS);
       // the receiver is removed as transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(0)).to.be.equal(
@@ -229,26 +243,34 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
       // mint
       const tx = await ibeRejectableSBT
-        .connect(middleware)
-        .mint(sender.address);
+        .connect(sender)
+        .mint(
+          identity.idReceiver,
+          identity.idTimestamp,
+          utils.keccak256(utils.toUtf8Bytes(message)),
+          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
+          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
+          encryptResult.ciphertext.cipherV,
+          encryptResult.ciphertext.cipherW
+        );
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
 
       // after minting, we have a balance of 0, because the receiver needs to accept
-      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(0);
+      expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        sender.address
+        receiver.address
       );
 
-      // the sender can cancel
-      await ibeRejectableSBT.connect(sender).acceptTransfer(tokenId);
+      // the receiver can accept
+      await ibeRejectableSBT.connect(receiver).acceptTransfer(tokenId);
       // after minting, we have a balance of 1
-      expect(await ibeRejectableSBT.balanceOf(sender.address)).to.be.equal(1);
+      expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(1);
       expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(
-        sender.address
+        receiver.address
       );
       // the receiver is removed as transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
