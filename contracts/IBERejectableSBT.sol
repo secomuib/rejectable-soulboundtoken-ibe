@@ -13,13 +13,19 @@ contract IBERejectableSBT is RejectableSBT {
     Counters.Counter private _tokenIdCounter;
 
     struct MessageData {
+        // identity of the receiver
         address idDeceiver;
         uint256 idTimestamp;
+        // hash of the message
         bytes messageHash;
+        // cipher of the message, encrypted with the identity of the receiver
         bytes cipherU_x;
         bytes cipherU_y;
         string cipherV;
         string cipherW;
+        // private key to decrypt the cipher
+        bytes privateKey_x;
+        bytes privateKey_y;
     }
 
     // Mapping from token ID to message data
@@ -71,7 +77,9 @@ contract IBERejectableSBT is RejectableSBT {
             cipherU_x: cipherU_x,
             cipherU_y: cipherU_y,
             cipherV: cipherV,
-            cipherW: cipherW
+            cipherW: cipherW,
+            privateKey_x: "",
+            privateKey_y: ""
         });
 
         return tokenId;
