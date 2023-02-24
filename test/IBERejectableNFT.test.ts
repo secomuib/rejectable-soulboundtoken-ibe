@@ -358,26 +358,25 @@ describe("IBERejectableSBT", () => {
       );
       
       const privateKey = {
-        privateKey: {
-          x: BigNumber.from(messageDataPrivateKey.privateKey_x),
-          y: BigNumber.from(messageDataPrivateKey.privateKey_y)
-        },
-        success: true
+        x: BigNumber.from(messageDataPrivateKey.privateKey_x).toString(),
+        y: BigNumber.from(messageDataPrivateKey.privateKey_y).toString()
       };
-
-      console.log(cryptIDSetup.publicParameters);
-      console.log(privateKey);
-      console.log(encryptResult.ciphertext);
+      const ciphertext = {
+        cipherU: {
+          x: BigNumber.from(messageDataPrivateKey.cipherU_x).toString(),
+          y: BigNumber.from(messageDataPrivateKey.cipherU_y).toString()
+        },
+        cipherV: messageDataPrivateKey.cipherV,
+        cipherW: messageDataPrivateKey.cipherW
+      }
 
       const decryptResult = cryptID.decrypt(
         cryptIDSetup.publicParameters,
         privateKey,
-        encryptResult.ciphertext
+        ciphertext
       );
-
-      console.log(1);
   
-      console.log(decryptResult);
+      console.log(decryptResult.plaintext);
     });
   });
 });
