@@ -100,6 +100,16 @@ contract IBERejectableSBT is RejectableSBT {
             "RejectableSBT: caller is not the middleware"
         );
         require(_exists(tokenId), "RejectableSBT: token does not exist");
+        require(
+            keccak256(abi.encodePacked((messageData[tokenId].privateKey_x))) ==
+                keccak256(abi.encodePacked((""))),
+            "RejectableSBT: private key already sent"
+        );
+        require(
+            keccak256(abi.encodePacked((messageData[tokenId].privateKey_y))) ==
+                keccak256(abi.encodePacked((""))),
+            "RejectableSBT: private key already sent"
+        );
 
         messageData[tokenId].privateKey_x = privateKey_x;
         messageData[tokenId].privateKey_y = privateKey_y;
