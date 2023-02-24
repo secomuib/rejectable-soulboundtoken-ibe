@@ -12,9 +12,11 @@ contract IBERejectableSBT is RejectableSBT {
 
     Counters.Counter private _tokenIdCounter;
 
+    address public middleware;
+
     struct MessageData {
         // identity of the receiver
-        address idDeceiver;
+        address idReceiver;
         uint256 idTimestamp;
         // hash of the message
         bytes messageHash;
@@ -42,6 +44,7 @@ contract IBERejectableSBT is RejectableSBT {
     constructor(
         string memory name_,
         string memory symbol_,
+        address middleware_,
         bytes memory fieldOrder_,
         bytes memory subgroupOrder_,
         bytes memory pointP_x_,
@@ -49,6 +52,8 @@ contract IBERejectableSBT is RejectableSBT {
         bytes memory pointPpublic_x_,
         bytes memory pointPpublic_y_
     ) RejectableSBT(name_, symbol_) {
+        middleware = middleware_;
+
         fieldOrder = fieldOrder_;
         subgroupOrder = subgroupOrder_;
         pointP_x = pointP_x_;
@@ -71,7 +76,7 @@ contract IBERejectableSBT is RejectableSBT {
         _mint(to, tokenId);
 
         messageData[tokenId] = MessageData({
-            idDeceiver: to,
+            idReceiver: to,
             idTimestamp: timestamp,
             messageHash: messageHash,
             cipherU_x: cipherU_x,
@@ -83,5 +88,20 @@ contract IBERejectableSBT is RejectableSBT {
         });
 
         return tokenId;
+    }
+
+    function setPrivateKey(
+        uint256 tokenId,
+        bytes memory privateKey_x,
+        bytes memory privateKey_y
+    ) public {
+        require(
+            _msgSender() == middleware,
+            "RejectableSBT: caller is not the middleware"
+        );
+        require(_exists(tokenId), "RejectableSBT: token does not exist");
+
+        messageData[tokenId].privateKey_x = privateKey_x;
+        messageData[tokenId].privateKey_y = privateKey_y;
     }
 }

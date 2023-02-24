@@ -20,6 +20,7 @@ const func: DeployFunction = async ({
     args: [
       "Rejectable IBE SBT",
       "RSBT1",
+      deployer,
       BigNumber.from(cryptIDSetup.publicParameters.fieldOrder).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.subgroupOrder).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.pointP.x).toHexString(),
