@@ -64,7 +64,8 @@ describe("IBERejectableSBT", () => {
 
     const message = "Ironic.";
     const identity = {
-      id: 1
+      idReceiver: 1,
+      idTimestamp: Math.floor(new Date().getTime() / 1000)
     };
     console.log(identity);
 
