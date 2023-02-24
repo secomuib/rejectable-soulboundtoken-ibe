@@ -16,8 +16,14 @@ contract IBERejectableSBT is RejectableSBT {
         address idDeceiver;
         uint256 idTimestamp;
         bytes messageHash;
-        bytes cipherMessage;
+        bytes cipherU_x;
+        bytes cipherU_y;
+        string cipherV;
+        string cipherW;
     }
+
+    // Mapping from token ID to message data
+    mapping(uint256 => MessageData) public messageData;
 
     // public parameters of the IBE algorithm
     bytes public fieldOrder;
@@ -49,11 +55,24 @@ contract IBERejectableSBT is RejectableSBT {
         address to,
         uint256 timestamp,
         bytes memory messageHash,
-        bytes memory cipherMessage
+        bytes memory cipherU_x,
+        bytes memory cipherU_y,
+        string memory cipherV,
+        string memory cipherW
     ) public returns (uint256) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _mint(to, tokenId);
+
+        messageData[tokenId] = MessageData({
+            idDeceiver: to,
+            idTimestamp: timestamp,
+            messageHash: messageHash,
+            cipherU_x: cipherU_x,
+            cipherU_y: cipherU_y,
+            cipherV: cipherV,
+            cipherW: cipherW
+        });
 
         return tokenId;
     }
