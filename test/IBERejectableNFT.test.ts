@@ -9,7 +9,6 @@ import CryptID from "@cryptid/cryptid-js";
 chai.use(waffle.solidity);
 const { expect } = chai;
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const RSBT_NAME = "Rejectable IBE SBT";
 const RSBT_SYMBOL = "RSBT1";
 
@@ -155,7 +154,9 @@ describe("IBERejectableSBT", () => {
 
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
-      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
+      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(
+        ethers.constants.AddressZero
+      );
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         receiver.address
@@ -183,7 +184,9 @@ describe("IBERejectableSBT", () => {
 
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
-      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
+      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(
+        ethers.constants.AddressZero
+      );
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         receiver.address
@@ -193,10 +196,12 @@ describe("IBERejectableSBT", () => {
       await ibeRejectableSBT.connect(sender).cancelTransfer(tokenId);
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
-      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
+      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(
+        ethers.constants.AddressZero
+      );
       // the receiver is removed as transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        ZERO_ADDRESS
+        ethers.constants.AddressZero
       );
     });
 
@@ -221,7 +226,9 @@ describe("IBERejectableSBT", () => {
 
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
-      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
+      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(
+        ethers.constants.AddressZero
+      );
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         receiver.address
@@ -231,10 +238,12 @@ describe("IBERejectableSBT", () => {
       await ibeRejectableSBT.connect(receiver).rejectTransfer(0);
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
-      expect(await ibeRejectableSBT.ownerOf(0)).to.be.equal(ZERO_ADDRESS);
+      expect(await ibeRejectableSBT.ownerOf(0)).to.be.equal(
+        ethers.constants.AddressZero
+      );
       // the receiver is removed as transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(0)).to.be.equal(
-        ZERO_ADDRESS
+        ethers.constants.AddressZero
       );
     });
 
@@ -259,7 +268,9 @@ describe("IBERejectableSBT", () => {
 
       // after minting, we have a balance of 0, because the receiver needs to accept
       expect(await ibeRejectableSBT.balanceOf(receiver.address)).to.be.equal(0);
-      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(ZERO_ADDRESS);
+      expect(await ibeRejectableSBT.ownerOf(tokenId)).to.be.equal(
+        ethers.constants.AddressZero
+      );
       // the receiver is the transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         receiver.address
@@ -274,7 +285,7 @@ describe("IBERejectableSBT", () => {
       );
       // the receiver is removed as transferable owner
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
-        ZERO_ADDRESS
+        ethers.constants.AddressZero
       );
     });
   });
