@@ -2,16 +2,22 @@
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 import "./SBT/RejectableSBT.sol";
 
 /// @title Test SBT with IBE parameters
 /// @notice Soulbound token test contract
-contract IBERejectableSBT is RejectableSBT, EIP712 {
+contract IBERejectableSBT is RejectableSBT {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
+
+    struct MessageData {
+        address idDeceiver;
+        uint256 idTimestamp;
+        bytes messageHash;
+        bytes cipherMessage;
+    }
 
     // public parameters of the IBE algorithm
     bytes public fieldOrder;
@@ -30,7 +36,7 @@ contract IBERejectableSBT is RejectableSBT, EIP712 {
         bytes memory pointP_y_,
         bytes memory pointPpublic_x_,
         bytes memory pointPpublic_y_
-    ) RejectableSBT(name_, symbol_) EIP712("IBERejectableSBT", "1") {
+    ) RejectableSBT(name_, symbol_) {
         fieldOrder = fieldOrder_;
         subgroupOrder = subgroupOrder_;
         pointP_x = pointP_x_;
@@ -39,37 +45,16 @@ contract IBERejectableSBT is RejectableSBT, EIP712 {
         pointPpublic_y = pointPpublic_y_;
     }
 
-    function mint(address _to, bytes calldata signature)
-        public
-        returns (uint256)
-    {
-        // to mint, we need to verify the signature of the middleware (with minting role)
-        require(_verify(_hash(_to), signature), "Invalid signature");
-
+    function mint(
+        address to,
+        uint256 timestamp,
+        bytes memory messageHash,
+        bytes memory cipherMessage
+    ) public returns (uint256) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
-        _mint(_to, tokenId);
+        _mint(to, tokenId);
 
         return tokenId;
-    }
-
-    function _hash(address account) internal view returns (bytes32) {
-        return
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256("IBERejectableSBT(address account)"),
-                        account
-                    )
-                )
-            );
-    }
-
-    function _verify(bytes32 digest, bytes memory signature)
-        internal
-        view
-        returns (bool)
-    {
-        return hasRole(MINTER_ROLE, ECDSA.recover(digest, signature));
     }
 }
