@@ -103,5 +103,13 @@ contract IBERejectableSBT is RejectableSBT {
 
         messageData[tokenId].privateKey_x = privateKey_x;
         messageData[tokenId].privateKey_y = privateKey_y;
+
+        emit PrivateKeySent(tokenId, privateKey_x, privateKey_y);
     }
+
+    event PrivateKeySent(
+        uint256 tokenId,
+        bytes privateKey_x,
+        bytes privateKey_y
+    );
 }
