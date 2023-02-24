@@ -4,7 +4,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./ISBT.sol";
 import "./IRejectableSBT.sol";
@@ -18,17 +18,18 @@ contract RejectableSBT is
     ISBT,
     IRejectableSBT,
     ISBTMetadata,
-    AccessControl
+    Ownable
 {
     using Strings for uint256;
-
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     // Token name
     string private _name;
 
     // Token symbol
     string private _symbol;
+
+    // Mapping from token ID to minter address
+    mapping(uint256 => address) private _minters;
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
@@ -45,9 +46,6 @@ contract RejectableSBT is
     constructor(string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
-
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setupRole(MINTER_ROLE, _msgSender());
     }
 
     /**
@@ -57,13 +55,12 @@ contract RejectableSBT is
         public
         view
         virtual
-        override(ERC165, IERC165, AccessControl)
+        override(ERC165, IERC165)
         returns (bool)
     {
         return
             interfaceId == type(ISBT).interfaceId ||
             interfaceId == type(ISBTMetadata).interfaceId ||
-            interfaceId == type(AccessControl).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -150,7 +147,7 @@ contract RejectableSBT is
      * and stop existing when they are burned (`_burn`).
      */
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        return _owners[tokenId] != address(0);
+        return _minters[tokenId] != address(0);
     }
 
     /**
@@ -167,6 +164,7 @@ contract RejectableSBT is
         _beforeTokenTransfer(owner, address(0), tokenId);
 
         _balances[owner] -= 1;
+        delete _minters[tokenId];
         delete _owners[tokenId];
 
         emit Burn(owner, tokenId);
@@ -243,6 +241,11 @@ contract RejectableSBT is
         return owner;
     }
 
+    function minterOf(uint256 tokenId) public view returns (address) {
+        address minter = _minters[tokenId];
+        return minter;
+    }
+
     /**
      * @dev Mints `tokenId` and transfers it to `to`.
      *
@@ -261,6 +264,7 @@ contract RejectableSBT is
 
         _beforeTokenTransfer(address(0), to, tokenId);
 
+        _minters[tokenId] = _msgSender();
         _transferableOwners[tokenId] = to;
 
         emit TransferRequest(address(0), to, tokenId);
@@ -313,7 +317,7 @@ contract RejectableSBT is
         require(
             // perhaps previous owner is address(0), when minting
             (RejectableSBT.ownerOf(tokenId) == address(0) &&
-                hasRole(MINTER_ROLE, _msgSender())) ||
+                _minters[tokenId] == _msgSender()) ||
                 _isOwner(_msgSender(), tokenId),
             "SBT: transfer caller is not owner nor approved"
         );
