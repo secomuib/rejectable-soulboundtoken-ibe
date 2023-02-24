@@ -335,7 +335,7 @@ describe("IBERejectableSBT", () => {
 
       const eventIdentity = {
         idReceiver: messageDataOnAccept.idReceiver,
-        idTimestamp: messageDataOnAccept.idTimestamp
+        idTimestamp: messageDataOnAccept.idTimestamp.toNumber()
       };
 
       // extract private key from master secret and public parameters
