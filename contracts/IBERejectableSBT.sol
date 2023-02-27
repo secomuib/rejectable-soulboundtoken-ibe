@@ -12,6 +12,7 @@ contract IBERejectableSBT is RejectableSBT {
 
     Counters.Counter private _tokenIdCounter;
 
+    // address of the middleware which will send the private key
     address public middleware;
 
     struct MessageData {
