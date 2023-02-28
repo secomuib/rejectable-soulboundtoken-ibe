@@ -62,7 +62,8 @@ const config: HardhatUserConfig = {
     currency: "USD",
     coinmarketcap: COINMARKETCAP_API_KEY,
     token: "MATIC",
-    gasPriceApi: "https://api.polygonscan.com/api?module=proxy&action=eth_gasPrice"
+    gasPriceApi:
+      "https://api.polygonscan.com/api?module=proxy&action=eth_gasPrice"
   },
   namedAccounts: {
     deployer: {
