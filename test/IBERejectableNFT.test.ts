@@ -92,6 +92,7 @@ describe("IBERejectableSBT", () => {
    */
   describe("Mint, Accept, Cancel, Reject a Rejectable SBT", () => {
     const message = "Test message";
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
     let identity;
     let encryptResult;
 
@@ -118,11 +119,9 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
-          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
-          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
-          encryptResult.ciphertext.cipherV,
-          encryptResult.ciphertext.cipherW
+          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
         );
 
       const receipt = await tx.wait();
@@ -148,11 +147,9 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
-          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
-          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
-          encryptResult.ciphertext.cipherV,
-          encryptResult.ciphertext.cipherW
+          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
         );
 
       const receipt = await tx.wait();
@@ -190,11 +187,9 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
-          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
-          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
-          encryptResult.ciphertext.cipherV,
-          encryptResult.ciphertext.cipherW
+          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
         );
 
       const receipt = await tx.wait();
@@ -232,11 +227,9 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
-          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
-          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
-          encryptResult.ciphertext.cipherV,
-          encryptResult.ciphertext.cipherW
+          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
         );
 
       const receipt = await tx.wait();
@@ -271,6 +264,7 @@ describe("IBERejectableSBT", () => {
    */
   describe("Middleware sends private key to receiver", () => {
     const message = "Test message";
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
     let identity;
     let encryptResult;
 
@@ -295,11 +289,9 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
-          BigNumber.from(encryptResult.ciphertext.cipherU.x).toHexString(),
-          BigNumber.from(encryptResult.ciphertext.cipherU.y).toHexString(),
-          encryptResult.ciphertext.cipherV,
-          encryptResult.ciphertext.cipherW
+          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
         );
       const receiptMint = await txMint.wait();
       const tokenId = receiptMint.events[0].args.tokenId;
