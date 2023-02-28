@@ -19,13 +19,12 @@ contract IBERejectableSBT is RejectableSBT {
         // identity of the receiver
         address idReceiver;
         uint256 idTimestamp;
+        // deadline
+        uint256 deadline;
         // hash of the message
         bytes messageHash;
-        // cipher of the message, encrypted with the identity of the receiver
-        bytes cipherU_x;
-        bytes cipherU_y;
-        string cipherV;
-        string cipherW;
+        // hash of the cipher of the message, encrypted with the identity of the receiver
+        bytes cipherHash;
         // private key to decrypt the cipher
         bytes privateKey_x;
         bytes privateKey_y;
@@ -66,11 +65,9 @@ contract IBERejectableSBT is RejectableSBT {
     function mint(
         address to,
         uint256 timestamp,
+        uint256 deadline,
         bytes memory messageHash,
-        bytes memory cipherU_x,
-        bytes memory cipherU_y,
-        string memory cipherV,
-        string memory cipherW
+        bytes memory cipherHash
     ) public returns (uint256) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
@@ -79,11 +76,9 @@ contract IBERejectableSBT is RejectableSBT {
         messageData[tokenId] = MessageData({
             idReceiver: to,
             idTimestamp: timestamp,
+            deadline: deadline,
             messageHash: messageHash,
-            cipherU_x: cipherU_x,
-            cipherU_y: cipherU_y,
-            cipherV: cipherV,
-            cipherW: cipherW,
+            cipherHash: cipherHash,
             privateKey_x: "",
             privateKey_y: ""
         });
@@ -117,6 +112,9 @@ contract IBERejectableSBT is RejectableSBT {
 
         emit PrivateKeySent(tokenId, privateKey_x, privateKey_y);
     }
+
+    /* function getState(uint256 tokenId) public pure returns (string memory) {
+    } */
 
     event PrivateKeySent(
         uint256 tokenId,
