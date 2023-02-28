@@ -49,9 +49,9 @@ contract IBERejectableSBT is
 
     enum State {
         Minted,
-        Cancelled,
-        Rejected,
         Accepted,
+        Rejected,
+        Cancelled,
         PrivateKeySent,
         Expired
     }
