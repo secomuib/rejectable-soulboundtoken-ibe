@@ -52,7 +52,8 @@ contract IBERejectableSBT is
         Cancelled,
         Rejected,
         Accepted,
-        PrivateKeySent
+        PrivateKeySent,
+        Expired
     }
 
     struct MessageData {
@@ -356,8 +357,21 @@ contract IBERejectableSBT is
         emit PrivateKeySent(tokenId, privateKey_x, privateKey_y);
     }
 
-    /* function getState(uint256 tokenId) public pure returns (string memory) {
-    } */
+    function getState(uint256 tokenId) public view returns (State) {
+        _requireMinted(tokenId);
+        if (messageData[tokenId].state == State.PrivateKeySent) {
+            return State.PrivateKeySent;
+        } else if (messageData[tokenId].state == State.Rejected) {
+            return State.Rejected;
+        } else if (messageData[tokenId].state == State.Cancelled) {
+            return State.Cancelled;
+        } else if (messageData[tokenId].state == State.Accepted) {
+            return State.Accepted;
+        } else if (messageData[tokenId].deadline < block.timestamp) {
+            return State.Expired;
+        }
+        return State.Minted;
+    }
 
     event PrivateKeySent(
         uint256 tokenId,
