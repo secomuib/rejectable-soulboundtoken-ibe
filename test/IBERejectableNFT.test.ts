@@ -352,22 +352,16 @@ describe("IBERejectableSBT", () => {
         eventTokenId
       );
 
+      // receiver gets the private key from the smart contract
       const privateKey = {
         x: BigNumber.from(messageDataPrivateKey.privateKey_x).toString(),
         y: BigNumber.from(messageDataPrivateKey.privateKey_y).toString()
       };
-      const ciphertext = {
-        cipherU: {
-          x: BigNumber.from(messageDataPrivateKey.cipherU_x).toString(),
-          y: BigNumber.from(messageDataPrivateKey.cipherU_y).toString()
-        },
-        cipherV: messageDataPrivateKey.cipherV,
-        cipherW: messageDataPrivateKey.cipherW
-      };
 
       const decryptResult = cryptID.decrypt(
         cryptIDSetup.publicParameters,
-        extractResult.privateKey,
+        privateKey,
+        // receiver has the ciphertext from a secure channel
         encryptResult.ciphertext
       );
 
