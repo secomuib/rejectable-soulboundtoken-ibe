@@ -69,6 +69,19 @@ contract IBERejectableSBT is RejectableSBT {
         bytes memory messageHash,
         bytes memory cipherHash
     ) public returns (uint256) {
+        require(to != address(0), "RejectableSBT: mint to the zero address");
+        require(deadline > block.timestamp, "RejectableSBT: deadline expired");
+        require(
+            keccak256(abi.encodePacked((messageHash))) !=
+                keccak256(abi.encodePacked((""))),
+            "RejectableSBT: message hash is empty"
+        );
+        require(
+            keccak256(abi.encodePacked((cipherHash))) !=
+                keccak256(abi.encodePacked((""))),
+            "RejectableSBT: cipher hash is empty"
+        );
+
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _mint(to, tokenId);
