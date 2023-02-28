@@ -357,6 +357,10 @@ describe("IBERejectableSBT", () => {
         x: BigNumber.from(messageDataPrivateKey.privateKey_x).toString(),
         y: BigNumber.from(messageDataPrivateKey.privateKey_y).toString()
       };
+      // receiver checks that the ciphertext is correct, comparing with the stored hash in the smart contract
+      expect(messageDataPrivateKey.ciphertextHash).to.be.equal(
+        utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
+      );
 
       const decryptResult = cryptID.decrypt(
         cryptIDSetup.publicParameters,
