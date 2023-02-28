@@ -24,7 +24,7 @@ contract IBERejectableSBT is RejectableSBT {
         // hash of the message
         bytes messageHash;
         // hash of the cipher of the message, encrypted with the identity of the receiver
-        bytes cipherHash;
+        bytes ciphertextHash;
         // private key to decrypt the cipher
         bytes privateKey_x;
         bytes privateKey_y;
@@ -67,7 +67,7 @@ contract IBERejectableSBT is RejectableSBT {
         uint256 timestamp,
         uint256 deadline,
         bytes memory messageHash,
-        bytes memory cipherHash
+        bytes memory ciphertextHash
     ) public returns (uint256) {
         require(to != address(0), "RejectableSBT: mint to the zero address");
         require(deadline > block.timestamp, "RejectableSBT: deadline expired");
@@ -77,7 +77,7 @@ contract IBERejectableSBT is RejectableSBT {
             "RejectableSBT: message hash is empty"
         );
         require(
-            keccak256(abi.encodePacked((cipherHash))) !=
+            keccak256(abi.encodePacked((ciphertextHash))) !=
                 keccak256(abi.encodePacked((""))),
             "RejectableSBT: cipher hash is empty"
         );
@@ -91,7 +91,7 @@ contract IBERejectableSBT is RejectableSBT {
             idTimestamp: timestamp,
             deadline: deadline,
             messageHash: messageHash,
-            cipherHash: cipherHash,
+            ciphertextHash: ciphertextHash,
             privateKey_x: "",
             privateKey_y: ""
         });
