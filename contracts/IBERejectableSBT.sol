@@ -248,6 +248,14 @@ contract IBERejectableSBT is
             _transferableOwners[tokenId] == _msgSender(),
             "IBERejectableSBT: accept transfer caller is not the receiver of the token"
         );
+        require(
+            messageData[tokenId].deadline > block.timestamp,
+            "IBERejectableSBT: deadline expired"
+        );
+        require(
+            messageData[tokenId].state == State.Minted,
+            "IBERejectableSBT: token is not in minted state"
+        );
 
         address from = IBERejectableSBT.ownerOf(tokenId);
         address to = _msgSender();
@@ -258,6 +266,7 @@ contract IBERejectableSBT is
         }
         _balances[to] += 1;
         _owners[tokenId] = to;
+        messageData[tokenId].state = State.Accepted;
 
         // remove the transferable owner from the mapping
         _transferableOwners[tokenId] = address(0);
@@ -270,10 +279,19 @@ contract IBERejectableSBT is
             _transferableOwners[tokenId] == _msgSender(),
             "IBERejectableSBT: reject transfer caller is not the receiver of the token"
         );
+        require(
+            messageData[tokenId].deadline > block.timestamp,
+            "IBERejectableSBT: deadline expired"
+        );
+        require(
+            messageData[tokenId].state == State.Minted,
+            "IBERejectableSBT: token is not in minted state"
+        );
 
         address from = IBERejectableSBT.ownerOf(tokenId);
         address to = _msgSender();
 
+        messageData[tokenId].state = State.Rejected;
         _transferableOwners[tokenId] = address(0);
 
         emit RejectTransfer(from, to, tokenId);
@@ -288,6 +306,10 @@ contract IBERejectableSBT is
                 _isOwner(_msgSender(), tokenId),
             "SBT: transfer caller is not owner nor approved"
         );
+        require(
+            messageData[tokenId].state == State.Minted,
+            "IBERejectableSBT: token is not in minted state"
+        );
 
         address from = IBERejectableSBT.ownerOf(tokenId);
         address to = _transferableOwners[tokenId];
@@ -297,6 +319,7 @@ contract IBERejectableSBT is
             "IBERejectableSBT: token is not transferable"
         );
         _transferableOwners[tokenId] = address(0);
+        messageData[tokenId].state = State.Cancelled;
 
         emit CancelTransfer(from, to, tokenId);
     }
@@ -321,9 +344,14 @@ contract IBERejectableSBT is
                 keccak256(abi.encodePacked((""))),
             "IBERejectableSBT: private key already sent"
         );
+        require(
+            messageData[tokenId].state == State.Accepted,
+            "IBERejectableSBT: token is not in accepted state"
+        );
 
         messageData[tokenId].privateKey_x = privateKey_x;
         messageData[tokenId].privateKey_y = privateKey_y;
+        messageData[tokenId].state = State.PrivateKeySent;
 
         emit PrivateKeySent(tokenId, privateKey_x, privateKey_y);
     }
