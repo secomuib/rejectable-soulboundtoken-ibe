@@ -12,7 +12,7 @@ contract RejectableSBT is SBT, IRejectableSBT {
     mapping(uint256 => address) internal _minters;
 
     // Mapping from token ID to transferable owner
-    mapping(uint256 => address) private _transferableOwners;
+    mapping(uint256 => address) internal _transferableOwners;
 
     constructor(string memory name_, string memory symbol_)
         SBT(name_, symbol_)
@@ -109,7 +109,7 @@ contract RejectableSBT is SBT, IRejectableSBT {
         emit TransferRequest(_msgSender(), to, tokenId);
     }
 
-    function acceptTransfer(uint256 tokenId) public override {
+    function acceptTransfer(uint256 tokenId) public virtual override {
         require(
             _transferableOwners[tokenId] == _msgSender(),
             "RejectableSBT: accept transfer caller is not the receiver of the token"
@@ -126,7 +126,7 @@ contract RejectableSBT is SBT, IRejectableSBT {
         emit AcceptTransfer(from, to, tokenId);
     }
 
-    function rejectTransfer(uint256 tokenId) public override {
+    function rejectTransfer(uint256 tokenId) public virtual override {
         require(
             _transferableOwners[tokenId] == _msgSender(),
             "RejectableSBT: reject transfer caller is not the receiver of the token"
@@ -140,8 +140,7 @@ contract RejectableSBT is SBT, IRejectableSBT {
         emit RejectTransfer(from, to, tokenId);
     }
 
-    function cancelTransfer(uint256 tokenId) public override {
-        //solhint-disable-next-line max-line-length
+    function cancelTransfer(uint256 tokenId) public virtual override {
         require(
             minterOf(tokenId) == _msgSender(),
             "RejectableSBT: cancel transfer caller is not the minter of the token"
