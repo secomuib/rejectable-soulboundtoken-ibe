@@ -8,6 +8,17 @@ import "./RejectableSBT.sol";
 /// not transferable and can be rejected when we mint it to an address.
 /// The token can be rejected/accepted only before the deadline.
 contract RejectableSBTDeadline is RejectableSBT {
+    enum State {
+        Minted,
+        Accepted,
+        Rejected,
+        Cancelled,
+        Expired
+    }
+
+    // Mapping from token ID to state
+    mapping(uint256 => State) internal _states;
+
     // Mapping from token ID to deadline
     mapping(uint256 => uint256) internal _deadlines;
 
@@ -51,7 +62,9 @@ contract RejectableSBTDeadline is RejectableSBT {
         );
 
         _minters[tokenId] = _msgSender();
+        _transferableOwners[tokenId] = to;
         _deadlines[tokenId] = deadline;
+        _states[tokenId] = State.Minted;
 
         emit TransferRequest(_msgSender(), to, tokenId);
     }
@@ -65,12 +78,17 @@ contract RejectableSBTDeadline is RejectableSBT {
             _deadlines[tokenId] > block.timestamp,
             "RejectableSBTDeadline: deadline expired"
         );
+        require(
+            _states[tokenId] == State.Minted,
+            "RejectableSBTDeadline: token is not in minted state"
+        );
 
         address from = minterOf(tokenId);
         address to = _msgSender();
 
         _balances[to] += 1;
         _owners[tokenId] = to;
+        _states[tokenId] = State.Accepted;
         // remove the transferable owner from the mapping
         _transferableOwners[tokenId] = address(0);
 
@@ -86,10 +104,15 @@ contract RejectableSBTDeadline is RejectableSBT {
             _deadlines[tokenId] > block.timestamp,
             "RejectableSBTDeadline: deadline expired"
         );
+        require(
+            _states[tokenId] == State.Minted,
+            "IBERejectableSBT: token is not in minted state"
+        );
 
         address from = minterOf(tokenId);
         address to = _msgSender();
 
+        _states[tokenId] = State.Rejected;
         _transferableOwners[tokenId] = address(0);
 
         emit RejectTransfer(from, to, tokenId);
@@ -100,6 +123,10 @@ contract RejectableSBTDeadline is RejectableSBT {
             minterOf(tokenId) == _msgSender(),
             "RejectableSBTDeadline: cancel transfer caller is not the minter of the token"
         );
+        require(
+            _states[tokenId] == State.Minted,
+            "IBERejectableSBT: token is not in minted state"
+        );
 
         address from = minterOf(tokenId);
         address to = _transferableOwners[tokenId];
@@ -109,6 +136,7 @@ contract RejectableSBTDeadline is RejectableSBT {
             "RejectableSBTDeadline: token is not transferable"
         );
 
+        _states[tokenId] = State.Cancelled;
         _transferableOwners[tokenId] = address(0);
 
         emit CancelTransfer(from, to, tokenId);
