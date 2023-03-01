@@ -312,9 +312,7 @@ describe("IBERejectableSBT", () => {
 
       // check event
       expect(receiptAccept.events[0].event).to.be.equal("AcceptTransfer");
-      expect(receiptAccept.events[0].args.from).to.be.equal(
-        ethers.constants.AddressZero
-      );
+      expect(receiptAccept.events[0].args.from).to.be.equal(sender.address);
       expect(receiptAccept.events[0].args.to).to.be.equal(receiver.address);
       expect(receiptAccept.events[0].args.tokenId).to.be.equal(tokenId);
 
