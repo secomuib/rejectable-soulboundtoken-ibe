@@ -124,6 +124,10 @@ contract RejectableSBTDeadline is RejectableSBT {
             "RejectableSBTDeadline: cancel transfer caller is not the minter of the token"
         );
         require(
+            _deadlines[tokenId] > block.timestamp,
+            "RejectableSBTDeadline: deadline expired"
+        );
+        require(
             _states[tokenId] == State.Minted,
             "IBERejectableSBT: token is not in minted state"
         );
