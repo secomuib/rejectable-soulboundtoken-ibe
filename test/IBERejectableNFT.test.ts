@@ -24,6 +24,7 @@ describe("IBERejectableSBT", () => {
   let receiver: SignerWithAddress;
   let cryptID: CryptID;
   let cryptIDSetup: CryptID.SetupResult;
+  let initializationVector: Uint8Array;
 
   before(async () => {
     [middleware, sender, receiver] = await ethers.getSigners();
@@ -34,7 +35,7 @@ describe("IBERejectableSBT", () => {
     expect(cryptIDSetup.success).to.be.true;
 
     // generate 16 bytes of random data
-    const initializationVector = crypto.randomBytes(16);
+    initializationVector = crypto.randomBytes(16);
 
     const IBERejectableSBT = await ethers.getContractFactory(
       "IBERejectableSBT"
@@ -69,6 +70,9 @@ describe("IBERejectableSBT", () => {
     });
 
     it("Check IBE public parameters", async () => {
+      expect(await ibeRejectableSBT.aesInitializationVector()).to.be.equal(
+        BigNumber.from(initializationVector).toHexString()
+      );
       expect(await ibeRejectableSBT.fieldOrder()).to.be.equal(
         BigNumber.from(cryptIDSetup.publicParameters.fieldOrder).toHexString()
       );
