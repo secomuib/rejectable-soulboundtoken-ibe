@@ -28,10 +28,12 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         // identity of the receiver
         address idReceiver;
         uint256 idTimestamp;
-        // hash of the message
+        // hash of the message in plain text
         bytes messageHash;
-        // hash of the cipher of the message, encrypted with the identity of the receiver
-        bytes ciphertextHash;
+        // hash of the cipher of the message
+        bytes messageCipherHash;
+        // hash of the cipher of the aes key, encrypted with the identity of the receiver
+        bytes keyCipherHash;
         // private key to decrypt the cipher
         bytes privateKey_x;
         bytes privateKey_y;
@@ -79,7 +81,8 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         uint256 timestamp,
         uint256 deadline,
         bytes memory messageHash,
-        bytes memory ciphertextHash
+        bytes memory messageCipherHash,
+        bytes memory keyCipherHash
     ) public returns (uint256) {
         require(
             keccak256(abi.encodePacked((messageHash))) !=
@@ -87,9 +90,14 @@ contract IBERejectableSBT is RejectableSBTDeadline {
             "IBERejectableSBT: message hash is empty"
         );
         require(
-            keccak256(abi.encodePacked((ciphertextHash))) !=
+            keccak256(abi.encodePacked((messageCipherHash))) !=
                 keccak256(abi.encodePacked((""))),
-            "IBERejectableSBT: cipher hash is empty"
+            "IBERejectableSBT: cipher of the message hash is empty"
+        );
+        require(
+            keccak256(abi.encodePacked((keyCipherHash))) !=
+                keccak256(abi.encodePacked((""))),
+            "IBERejectableSBT: the cipher of the aes key hash is empty"
         );
 
         uint256 tokenId = _tokenIdCounter.current();
@@ -100,7 +108,8 @@ contract IBERejectableSBT is RejectableSBTDeadline {
             idReceiver: to,
             idTimestamp: timestamp,
             messageHash: messageHash,
-            ciphertextHash: ciphertextHash,
+            messageCipherHash: messageCipherHash,
+            keyCipherHash: keyCipherHash,
             privateKey_x: "",
             privateKey_y: ""
         });
