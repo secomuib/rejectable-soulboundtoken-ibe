@@ -40,6 +40,8 @@ contract IBERejectableSBT is RejectableSBTDeadline {
     // Mapping from token ID to message data
     mapping(uint256 => MessageData) public messageData;
 
+    // public parameter of the AES algorithm
+    bytes public aesInitializationVector;
     // public parameters of the IBE algorithm
     bytes public fieldOrder;
     bytes public subgroupOrder;
@@ -52,6 +54,7 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         string memory name_,
         string memory symbol_,
         address middleware_,
+        bytes memory aesInitializationVector_,
         bytes memory fieldOrder_,
         bytes memory subgroupOrder_,
         bytes memory pointP_x_,
@@ -60,6 +63,8 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         bytes memory pointPpublic_y_
     ) RejectableSBTDeadline(name_, symbol_) {
         middleware = middleware_;
+
+        aesInitializationVector = aesInitializationVector_;
 
         fieldOrder = fieldOrder_;
         subgroupOrder = subgroupOrder_;

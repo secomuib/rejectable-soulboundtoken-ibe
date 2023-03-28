@@ -5,12 +5,17 @@ import { ethers, waffle } from "hardhat";
 import chai from "chai";
 import { BigNumber, Contract, utils } from "ethers";
 import CryptID from "@cryptid/cryptid-js";
+import crypto from "crypto";
 
 chai.use(waffle.solidity);
 const { expect } = chai;
 
 const RSBT_NAME = "Rejectable IBE SBT";
 const RSBT_SYMBOL = "RSBT1";
+
+const algorithm = "aes-256-cbc";
+const message = "This is a secret message";
+const deadline = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
 
 describe("IBERejectableSBT", () => {
   let ibeRejectableSBT: Contract;
@@ -28,6 +33,9 @@ describe("IBERejectableSBT", () => {
 
     expect(cryptIDSetup.success).to.be.true;
 
+    // generate 16 bytes of random data
+    const initializationVector = crypto.randomBytes(16);
+
     const IBERejectableSBT = await ethers.getContractFactory(
       "IBERejectableSBT"
     );
@@ -35,6 +43,7 @@ describe("IBERejectableSBT", () => {
       RSBT_NAME,
       RSBT_SYMBOL,
       middleware.address,
+      BigNumber.from(initializationVector).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.fieldOrder).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.subgroupOrder).toHexString(),
       BigNumber.from(cryptIDSetup.publicParameters.pointP.x).toHexString(),
@@ -91,8 +100,6 @@ describe("IBERejectableSBT", () => {
    * Mint, Accept, Cancel, Reject a Rejectable SBT
    */
   describe("Mint, Accept, Cancel, Reject a Rejectable SBT", () => {
-    const message = "Test message";
-    const deadline = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
     let identity;
     let encryptResult;
 
@@ -271,8 +278,6 @@ describe("IBERejectableSBT", () => {
    * Middleware sends private key to receiver
    */
   describe("Middleware sends private key to receiver", () => {
-    const message = "Test message";
-    const deadline = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
     let identity;
     let encryptResult;
 
