@@ -106,6 +106,8 @@ describe("IBERejectableSBT", () => {
   describe("Mint, Accept, Cancel, Reject a Rejectable SBT", () => {
     let identity;
     let encryptResult;
+    let aesSecurityKey;
+    let encryptedMessage;
 
     before(async () => {
       identity = {
@@ -113,10 +115,26 @@ describe("IBERejectableSBT", () => {
         idTimestamp: Math.floor(new Date().getTime() / 1000)
       };
 
+      // secret key generate 32 bytes of random data
+      aesSecurityKey = crypto.randomBytes(32);
+      // the cipher function
+      const cipher = crypto.createCipheriv(
+        algorithm,
+        aesSecurityKey,
+        Buffer.from(
+          (await ibeRejectableSBT.aesInitializationVector()).replace("0x", ""),
+          "hex"
+        )
+      );
+
+      // encrypt the message
+      encryptedMessage =
+        cipher.update(message, "utf-8", "hex") + cipher.final("hex");
+
       encryptResult = cryptID.encrypt(
         cryptIDSetup.publicParameters,
         identity,
-        message
+        BigNumber.from(aesSecurityKey).toHexString()
       );
       expect(encryptResult.success).to.be.true;
     });
@@ -132,6 +150,7 @@ describe("IBERejectableSBT", () => {
           identity.idTimestamp,
           deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
+          utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
         );
 
@@ -162,6 +181,7 @@ describe("IBERejectableSBT", () => {
           identity.idTimestamp,
           deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
+          utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
         );
 
@@ -204,6 +224,7 @@ describe("IBERejectableSBT", () => {
           identity.idTimestamp,
           deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
+          utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
         );
 
@@ -246,6 +267,7 @@ describe("IBERejectableSBT", () => {
           identity.idTimestamp,
           deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
+          utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
         );
 
