@@ -443,62 +443,54 @@ describe("IBERejectableSBT", () => {
         x: BigNumber.from(messageDataOnGetPrivateKey.privateKey_x).toString(),
         y: BigNumber.from(messageDataOnGetPrivateKey.privateKey_y).toString()
       };
-      // receiver checks that the cipher hash of the message that he has received off-chain
-      // is correct, comparing with the stored hash in the smart contract
-      expect(messageDataOnGetPrivateKey.messageCipherHash).to.be.equal(
-        utils.keccak256(utils.toUtf8Bytes(encryptedMessage))
-      );
 
-      /*
-    // secret key generate 32 bytes of random data
-    const securityKey = crypto.randomBytes(32);
-    // the cipher function
-    const cipher = crypto.createCipheriv(algorithm, securityKey, initializationVector);
+      // receiver gets the AES encrypted key from the smart contract
+      const encryptedKeyFromSC = {
+        cipherU: {
+          x: messageDataOnGetPrivateKey.encryptedKey_cipherU_x.replace(
+            "0x",
+            ""
+          ),
+          y: messageDataOnGetPrivateKey.encryptedKey_cipherU_y.replace("0x", "")
+        },
+        cipherV: messageDataOnGetPrivateKey.encryptedKey_cipherV,
+        cipherW: messageDataOnGetPrivateKey.encryptedKey_cipherW
+      };
 
-    // encrypt the message
-    let encryptedData = cipher.update(message, "utf-8", "hex") + cipher.final("hex");
-
-    console.log(initializationVector);
-    console.log(BigNumber.from(initializationVector).toHexString());
-    console.log(securityKey);
-    console.log(cipher);
-    console.log(encryptedData);
-
-    console.log("Encrypted message: " + encryptedData);
-
-    
-
-    console.log("Encrypted message: " + encryptedData);
-
-    const decipher = crypto.createDecipheriv(algorithm, securityKey, initializationVector);
-
-    let decryptedData = decipher.update(encryptedData, "hex", "utf-8");
-
-    console.log(decryptedData);
-
-    decryptedData += decipher.final("utf8");
-
-    console.log(decryptedData);
-
-      */
-
-      /*
+      // receiver decrypts the AES private key to decrypt the message
       const decryptResult = cryptID.decrypt(
         cryptIDSetup.publicParameters,
         privateKey,
-        // receiver has the cipher message from a secure channel
-        kkkkkk
-        encryptResult.ciphertext
+        encryptedKeyFromSC
+      );
+      expect(decryptResult.success).to.be.true;
+
+      // receiver checks that the cipher hash of the message that he has received off-chain
+      // is correct, comparing with the stored hash in the smart contract
+      expect(messageDataOnGetPrivateKey.encryptedMessageHash).to.be.equal(
+        utils.keccak256(utils.toUtf8Bytes(encryptedMessage))
       );
 
-      // check if the message is decrypted correctly
-      expect(decryptResult.success).to.be.true;
-      expect(decryptResult.plaintext).to.be.equal(message);
+      // receiver gets the AES security key
+      const securityKey = decryptResult.plaintext;
+
+      // the cipher function
+      const decipher = crypto.createDecipheriv(
+        algorithm,
+        Buffer.from(securityKey.replace("0x", ""), "hex"),
+        Buffer.from(
+          (await ibeRejectableSBT.aesInitializationVector()).replace("0x", ""),
+          "hex"
+        )
+      );
+      let decryptedMessage =
+        decipher.update(encryptedMessage, "hex", "utf-8") +
+        decipher.final("utf8");
 
       // check if the hash of the message is correct
-      expect(
-        utils.keccak256(utils.toUtf8Bytes(decryptResult.plaintext))
-      ).to.be.equal(messageDataOnGetPrivateKey.messageHash); */
+      expect(messageDataOnGetPrivateKey.messageHash).to.be.equal(
+        utils.keccak256(utils.toUtf8Bytes(decryptedMessage))
+      );
     });
   });
 });
