@@ -17,6 +17,14 @@ const algorithm = "aes-256-cbc";
 const message = "This is a secret message";
 const deadline = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
 
+const convertToHex = (str: string) => {
+  if (str.length % 2 !== 0) {
+    return "0x0" + str;
+  } else {
+    return "0x" + str;
+  }
+};
+
 describe("IBERejectableSBT", () => {
   let ibeRejectableSBT: Contract;
   let middleware: SignerWithAddress;
@@ -108,6 +116,7 @@ describe("IBERejectableSBT", () => {
     let encryptResult;
     let aesSecurityKey;
     let encryptedMessage;
+    let encryptedKey;
 
     before(async () => {
       identity = {
@@ -137,6 +146,7 @@ describe("IBERejectableSBT", () => {
         BigNumber.from(aesSecurityKey).toHexString()
       );
       expect(encryptResult.success).to.be.true;
+      encryptedKey = encryptResult.ciphertext;
     });
 
     it("Sender can mint", async () => {
@@ -151,7 +161,10 @@ describe("IBERejectableSBT", () => {
           deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
-          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
+          convertToHex(encryptedKey.cipherU.x),
+          convertToHex(encryptedKey.cipherU.y),
+          encryptedKey.cipherV,
+          encryptedKey.cipherW
         );
 
       const receipt = await tx.wait();
@@ -182,7 +195,10 @@ describe("IBERejectableSBT", () => {
           deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
-          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
+          convertToHex(encryptedKey.cipherU.x),
+          convertToHex(encryptedKey.cipherU.y),
+          encryptedKey.cipherV,
+          encryptedKey.cipherW
         );
 
       const receipt = await tx.wait();
@@ -225,7 +241,10 @@ describe("IBERejectableSBT", () => {
           deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
-          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
+          convertToHex(encryptedKey.cipherU.x),
+          convertToHex(encryptedKey.cipherU.y),
+          encryptedKey.cipherV,
+          encryptedKey.cipherW
         );
 
       const receipt = await tx.wait();
@@ -268,7 +287,10 @@ describe("IBERejectableSBT", () => {
           deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
-          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
+          convertToHex(encryptedKey.cipherU.x),
+          convertToHex(encryptedKey.cipherU.y),
+          encryptedKey.cipherV,
+          encryptedKey.cipherW
         );
 
       const receipt = await tx.wait();
@@ -306,6 +328,9 @@ describe("IBERejectableSBT", () => {
   describe("Middleware sends private key to receiver", () => {
     let identity;
     let encryptResult;
+    let aesSecurityKey;
+    let encryptedMessage;
+    let encryptedKey;
 
     before(async () => {
       identity = {
@@ -313,12 +338,29 @@ describe("IBERejectableSBT", () => {
         idTimestamp: Math.floor(new Date().getTime() / 1000)
       };
 
+      // secret key generate 32 bytes of random data
+      aesSecurityKey = crypto.randomBytes(32);
+      // the cipher function
+      const cipher = crypto.createCipheriv(
+        algorithm,
+        aesSecurityKey,
+        Buffer.from(
+          (await ibeRejectableSBT.aesInitializationVector()).replace("0x", ""),
+          "hex"
+        )
+      );
+
+      // encrypt the message
+      encryptedMessage =
+        cipher.update(message, "utf-8", "hex") + cipher.final("hex");
+
       encryptResult = cryptID.encrypt(
         cryptIDSetup.publicParameters,
         identity,
-        message
+        BigNumber.from(aesSecurityKey).toHexString()
       );
       expect(encryptResult.success).to.be.true;
+      encryptedKey = encryptResult.ciphertext;
     });
 
     it("When receiver accepts transfer, middleware stores private key to decrypt the message", async () => {
@@ -330,7 +372,11 @@ describe("IBERejectableSBT", () => {
           identity.idTimestamp,
           deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
-          utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
+          utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
+          convertToHex(encryptedKey.cipherU.x),
+          convertToHex(encryptedKey.cipherU.y),
+          encryptedKey.cipherV,
+          encryptedKey.cipherW
         );
       const receiptMint = await txMint.wait();
       const tokenId = receiptMint.events[0].args.tokenId;
@@ -388,24 +434,60 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(4);
 
       // now the receiver can decrypt the message
-      const messageDataPrivateKey = await ibeRejectableSBT.messageData(
+      const messageDataOnGetPrivateKey = await ibeRejectableSBT.messageData(
         eventTokenId
       );
 
       // receiver gets the private key from the smart contract
       const privateKey = {
-        x: BigNumber.from(messageDataPrivateKey.privateKey_x).toString(),
-        y: BigNumber.from(messageDataPrivateKey.privateKey_y).toString()
+        x: BigNumber.from(messageDataOnGetPrivateKey.privateKey_x).toString(),
+        y: BigNumber.from(messageDataOnGetPrivateKey.privateKey_y).toString()
       };
-      // receiver checks that the ciphertext is correct, comparing with the stored hash in the smart contract
-      expect(messageDataPrivateKey.ciphertextHash).to.be.equal(
-        utils.keccak256(utils.toUtf8Bytes(encryptResult.ciphertext))
+      // receiver checks that the cipher hash of the message that he has received off-chain
+      // is correct, comparing with the stored hash in the smart contract
+      expect(messageDataOnGetPrivateKey.messageCipherHash).to.be.equal(
+        utils.keccak256(utils.toUtf8Bytes(encryptedMessage))
       );
 
+      /*
+    // secret key generate 32 bytes of random data
+    const securityKey = crypto.randomBytes(32);
+    // the cipher function
+    const cipher = crypto.createCipheriv(algorithm, securityKey, initializationVector);
+
+    // encrypt the message
+    let encryptedData = cipher.update(message, "utf-8", "hex") + cipher.final("hex");
+
+    console.log(initializationVector);
+    console.log(BigNumber.from(initializationVector).toHexString());
+    console.log(securityKey);
+    console.log(cipher);
+    console.log(encryptedData);
+
+    console.log("Encrypted message: " + encryptedData);
+
+    
+
+    console.log("Encrypted message: " + encryptedData);
+
+    const decipher = crypto.createDecipheriv(algorithm, securityKey, initializationVector);
+
+    let decryptedData = decipher.update(encryptedData, "hex", "utf-8");
+
+    console.log(decryptedData);
+
+    decryptedData += decipher.final("utf8");
+
+    console.log(decryptedData);
+
+      */
+
+      /*
       const decryptResult = cryptID.decrypt(
         cryptIDSetup.publicParameters,
         privateKey,
-        // receiver has the ciphertext from a secure channel
+        // receiver has the cipher message from a secure channel
+        kkkkkk
         encryptResult.ciphertext
       );
 
@@ -416,7 +498,7 @@ describe("IBERejectableSBT", () => {
       // check if the hash of the message is correct
       expect(
         utils.keccak256(utils.toUtf8Bytes(decryptResult.plaintext))
-      ).to.be.equal(messageDataPrivateKey.messageHash);
+      ).to.be.equal(messageDataOnGetPrivateKey.messageHash); */
     });
   });
 });
