@@ -31,9 +31,9 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         // hash of the message in plain text
         bytes messageHash;
         // hash of the cipher of the message
-        bytes messageCipherHash;
+        bytes encryptedMessageHash;
         // the cipher of the AES key, encrypted with the identity of the receiver
-        bytes keyCipher;
+        bytes encryptedKey;
         // private key to decrypt the cipher
         bytes privateKey_x;
         bytes privateKey_y;
@@ -81,8 +81,8 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         uint256 timestamp,
         uint256 deadline,
         bytes memory messageHash,
-        bytes memory messageCipherHash,
-        bytes memory keyCipher
+        bytes memory encryptedMessageHash,
+        bytes memory encryptedKey
     ) public returns (uint256) {
         require(
             keccak256(abi.encodePacked((messageHash))) !=
@@ -90,12 +90,12 @@ contract IBERejectableSBT is RejectableSBTDeadline {
             "IBERejectableSBT: message hash is empty"
         );
         require(
-            keccak256(abi.encodePacked((messageCipherHash))) !=
+            keccak256(abi.encodePacked((encryptedMessageHash))) !=
                 keccak256(abi.encodePacked((""))),
             "IBERejectableSBT: cipher of the message hash is empty"
         );
         require(
-            keccak256(abi.encodePacked((keyCipher))) !=
+            keccak256(abi.encodePacked((encryptedKey))) !=
                 keccak256(abi.encodePacked((""))),
             "IBERejectableSBT: the cipher of the aes key hash is empty"
         );
@@ -108,8 +108,8 @@ contract IBERejectableSBT is RejectableSBTDeadline {
             idReceiver: to,
             idTimestamp: timestamp,
             messageHash: messageHash,
-            messageCipherHash: messageCipherHash,
-            keyCipher: keyCipher,
+            encryptedMessageHash: encryptedMessageHash,
+            encryptedKey: encryptedKey,
             privateKey_x: "",
             privateKey_y: ""
         });
