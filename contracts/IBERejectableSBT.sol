@@ -33,7 +33,10 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         // hash of the cipher of the message
         bytes encryptedMessageHash;
         // the cipher of the AES key, encrypted with the identity of the receiver
-        bytes encryptedKey;
+        bytes encryptedKey_cipherU_x;
+        bytes encryptedKey_cipherU_y;
+        string encryptedKey_cipherV;
+        string encryptedKey_cipherW;
         // private key to decrypt the cipher
         bytes privateKey_x;
         bytes privateKey_y;
@@ -82,24 +85,11 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         uint256 deadline,
         bytes memory messageHash,
         bytes memory encryptedMessageHash,
-        bytes memory encryptedKey
+        bytes memory encryptedKey_cipherU_x,
+        bytes memory encryptedKey_cipherU_y,
+        string memory encryptedKey_cipherV,
+        string memory encryptedKey_cipherW
     ) public returns (uint256) {
-        require(
-            keccak256(abi.encodePacked((messageHash))) !=
-                keccak256(abi.encodePacked((""))),
-            "IBERejectableSBT: message hash is empty"
-        );
-        require(
-            keccak256(abi.encodePacked((encryptedMessageHash))) !=
-                keccak256(abi.encodePacked((""))),
-            "IBERejectableSBT: cipher of the message hash is empty"
-        );
-        require(
-            keccak256(abi.encodePacked((encryptedKey))) !=
-                keccak256(abi.encodePacked((""))),
-            "IBERejectableSBT: the cipher of the aes key hash is empty"
-        );
-
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _mint(to, tokenId, deadline);
@@ -109,7 +99,10 @@ contract IBERejectableSBT is RejectableSBTDeadline {
             idTimestamp: timestamp,
             messageHash: messageHash,
             encryptedMessageHash: encryptedMessageHash,
-            encryptedKey: encryptedKey,
+            encryptedKey_cipherU_x: encryptedKey_cipherU_x,
+            encryptedKey_cipherU_y: encryptedKey_cipherU_y,
+            encryptedKey_cipherV: encryptedKey_cipherV,
+            encryptedKey_cipherW: encryptedKey_cipherW,
             privateKey_x: "",
             privateKey_y: ""
         });
