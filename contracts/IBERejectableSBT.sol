@@ -5,7 +5,8 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./SBT/RejectableSBT.sol";
 
-/// @title Test rejectable SBT with IBE parameters and deadline for accepting and sending the private key
+/// @title Test rejectable SBT with IBE parameters and deadline for accepting
+/// and sending the private key
 /// @notice Soulbound token test contract
 contract IBERejectableSBT is RejectableSBT {
     using Counters for Counters.Counter;
@@ -17,7 +18,9 @@ contract IBERejectableSBT is RejectableSBT {
         Accepted,
         Rejected,
         Cancelled,
-        Expired
+        PrivateKeySent,
+        ExpiredAccept,
+        ExpiredPrivateKey
     }
 
     // Mapping from token ID to state
@@ -30,15 +33,6 @@ contract IBERejectableSBT is RejectableSBT {
 
     // address of the middleware which will send the private key
     address public middleware;
-
-    enum IBEState {
-        Minted,
-        Accepted,
-        Rejected,
-        Cancelled,
-        PrivateKeySent,
-        Expired
-    }
 
     struct MessageData {
         // identity of the receiver
@@ -102,24 +96,24 @@ contract IBERejectableSBT is RejectableSBT {
     function _mint(
         address to,
         uint256 tokenId,
-        uint256 deadlineAccept
+        uint256 deadlineAccept,
+        uint256 deadlinePrivateKey
     ) internal virtual {
-        require(
-            to != address(0),
-            "RejectableSBTDeadline: mint to the zero address"
-        );
-        require(
-            !_exists(tokenId),
-            "RejectableSBTDeadline: token already minted"
-        );
+        require(to != address(0), "IBERejectableSBT: mint to the zero address");
+        require(!_exists(tokenId), "IBERejectableSBT: token already minted");
         require(
             deadlineAccept > block.timestamp,
-            "RejectableSBTDeadline: deadline expired"
+            "IBERejectableSBT: deadline for accept expired"
+        );
+        require(
+            deadlinePrivateKey > block.timestamp,
+            "IBERejectableSBT: deadline for send private key expired"
         );
 
         _minters[tokenId] = _msgSender();
         _transferableOwners[tokenId] = to;
         _deadlineAccept[tokenId] = deadlineAccept;
+        _deadlinePrivateKey[tokenId] = deadlinePrivateKey;
         _states[tokenId] = State.Minted;
 
         emit TransferRequest(_msgSender(), to, tokenId);
@@ -128,7 +122,8 @@ contract IBERejectableSBT is RejectableSBT {
     function mint(
         address to,
         uint256 timestamp,
-        uint256 deadline,
+        uint256 deadlineAccept,
+        uint256 deadlinePrivateKey,
         bytes memory messageHash,
         bytes memory encryptedMessageHash,
         bytes memory encryptedKey_cipherU_x,
@@ -138,7 +133,7 @@ contract IBERejectableSBT is RejectableSBT {
     ) public returns (uint256) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
-        _mint(to, tokenId, deadline);
+        _mint(to, tokenId, deadlineAccept, deadlinePrivateKey);
 
         messageData[tokenId] = MessageData({
             idReceiver: to,
@@ -159,15 +154,15 @@ contract IBERejectableSBT is RejectableSBT {
     function acceptTransfer(uint256 tokenId) public virtual override {
         require(
             _transferableOwners[tokenId] == _msgSender(),
-            "RejectableSBTDeadline: accept transfer caller is not the receiver of the token"
+            "IBERejectableSBT: accept transfer caller is not the receiver of the token"
         );
         require(
             _deadlineAccept[tokenId] > block.timestamp,
-            "RejectableSBTDeadline: deadline expired"
+            "IBERejectableSBT: deadline expired"
         );
         require(
             _states[tokenId] == State.Minted,
-            "RejectableSBTDeadline: token is not in minted state"
+            "IBERejectableSBT: token is not in minted state"
         );
 
         address from = minterOf(tokenId);
@@ -185,11 +180,11 @@ contract IBERejectableSBT is RejectableSBT {
     function rejectTransfer(uint256 tokenId) public virtual override {
         require(
             _transferableOwners[tokenId] == _msgSender(),
-            "RejectableSBTDeadline: reject transfer caller is not the receiver of the token"
+            "IBERejectableSBT: reject transfer caller is not the receiver of the token"
         );
         require(
             _deadlineAccept[tokenId] > block.timestamp,
-            "RejectableSBTDeadline: deadline expired"
+            "IBERejectableSBT: deadline expired"
         );
         require(
             _states[tokenId] == State.Minted,
@@ -208,11 +203,11 @@ contract IBERejectableSBT is RejectableSBT {
     function cancelTransfer(uint256 tokenId) public virtual override {
         require(
             minterOf(tokenId) == _msgSender(),
-            "RejectableSBTDeadline: cancel transfer caller is not the minter of the token"
+            "IBERejectableSBT: cancel transfer caller is not the minter of the token"
         );
         require(
             _deadlineAccept[tokenId] > block.timestamp,
-            "RejectableSBTDeadline: deadline expired"
+            "IBERejectableSBT: deadline expired"
         );
         require(
             _states[tokenId] == State.Minted,
@@ -224,7 +219,7 @@ contract IBERejectableSBT is RejectableSBT {
 
         require(
             to != address(0),
-            "RejectableSBTDeadline: token is not transferable"
+            "IBERejectableSBT: token is not transferable"
         );
 
         _states[tokenId] = State.Cancelled;
@@ -270,33 +265,40 @@ contract IBERejectableSBT is RejectableSBT {
         virtual
         returns (uint256)
     {
-        require(
-            _exists(tokenId),
-            "RejectableSBTDeadline: token does not exist"
-        );
+        require(_exists(tokenId), "IBERejectableSBT: token does not exist");
         return _deadlineAccept[tokenId];
     }
 
-    function getState(uint256 tokenId) public view virtual returns (IBEState) {
+    function getDeadlinePrivateKey(uint256 tokenId)
+        public
+        view
+        virtual
+        returns (uint256)
+    {
+        require(_exists(tokenId), "IBERejectableSBT: token does not exist");
+        return _deadlinePrivateKey[tokenId];
+    }
+
+    function getState(uint256 tokenId) public view virtual returns (State) {
         _requireMinted(tokenId);
         if (_states[tokenId] == State.Rejected) {
-            return IBEState.Rejected;
+            return State.Rejected;
         } else if (_states[tokenId] == State.Cancelled) {
-            return IBEState.Cancelled;
+            return State.Cancelled;
         } else if (_states[tokenId] == State.Accepted) {
             if (
                 keccak256(
                     abi.encodePacked((messageData[tokenId].privateKey_x))
                 ) != keccak256(abi.encodePacked(("")))
             ) {
-                return IBEState.PrivateKeySent;
+                return State.PrivateKeySent;
             } else {
-                return IBEState.Accepted;
+                return State.Accepted;
             }
         } else if (_deadlineAccept[tokenId] < block.timestamp) {
-            return IBEState.Expired;
+            return State.ExpiredAccept;
         }
-        return IBEState.Minted;
+        return State.Minted;
     }
 
     event PrivateKeySent(
