@@ -181,7 +181,8 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         receiver.address
       );
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
+      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKey
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(0);
     });
 
@@ -228,7 +229,8 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         ethers.constants.AddressZero
       );
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
+      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKeyexpired
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(3);
     });
 
@@ -275,7 +277,8 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         ethers.constants.AddressZero
       );
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
+      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKey
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(2);
     });
 
@@ -322,7 +325,8 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         ethers.constants.AddressZero
       );
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
+      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKey
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(1);
     });
   });
@@ -436,7 +440,8 @@ describe("IBERejectableSBT", () => {
           BigNumber.from(extractResult.privateKey.y).toHexString()
         );
 
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
+      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKey
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(4);
 
       // now the receiver can decrypt the message
