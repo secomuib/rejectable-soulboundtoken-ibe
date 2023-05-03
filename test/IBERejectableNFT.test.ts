@@ -15,7 +15,8 @@ const RSBT_SYMBOL = "RSBT1";
 
 const algorithm = "aes-256-cbc";
 const message = "This is a secret message";
-const deadline = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
+const deadlineAccept = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
+const deadlinePrivateKey = Math.floor(Date.now() / 1000) + 60 * 30; // 30 minutes from now
 
 const convertToHex = (str: string) => {
   if (str.length % 2 !== 0) {
@@ -158,7 +159,8 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadline,
+          deadlineAccept,
+          deadlinePrivateKey,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
@@ -192,7 +194,8 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadline,
+          deadlineAccept,
+          deadlinePrivateKey,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
@@ -238,7 +241,8 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadline,
+          deadlineAccept,
+          deadlinePrivateKey,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
@@ -284,7 +288,8 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadline,
+          deadlineAccept,
+          deadlinePrivateKey,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
@@ -370,7 +375,8 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadline,
+          deadlineAccept,
+          deadlinePrivateKey,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
