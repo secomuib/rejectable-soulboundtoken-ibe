@@ -3,14 +3,30 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-import "./SBT/RejectableSBTDeadline.sol";
+import "./SBT/RejectableSBT.sol";
 
-/// @title Test rejectable SBT with IBE parameters and deadline
+/// @title Test rejectable SBT with IBE parameters and deadline for accepting and sending the private key
 /// @notice Soulbound token test contract
-contract IBERejectableSBT is RejectableSBTDeadline {
+contract IBERejectableSBT is RejectableSBT {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
+
+    enum State {
+        Minted,
+        Accepted,
+        Rejected,
+        Cancelled,
+        Expired
+    }
+
+    // Mapping from token ID to state
+    mapping(uint256 => State) internal _states;
+
+    // Mapping from token ID to deadline for accepting
+    mapping(uint256 => uint256) internal _deadlineAccept;
+    // Mapping from token ID to deadline for sending the private key
+    mapping(uint256 => uint256) internal _deadlinePrivateKey;
 
     // address of the middleware which will send the private key
     address public middleware;
@@ -66,7 +82,7 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         bytes memory pointP_y_,
         bytes memory pointPpublic_x_,
         bytes memory pointPpublic_y_
-    ) RejectableSBTDeadline(name_, symbol_) {
+    ) RejectableSBT(name_, symbol_) {
         middleware = middleware_;
 
         aesInitializationVector = aesInitializationVector_;
@@ -77,6 +93,36 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         pointP_y = pointP_y_;
         pointPpublic_x = pointPpublic_x_;
         pointPpublic_y = pointPpublic_y_;
+    }
+
+    function _mint(address, uint256) internal virtual override {
+        revert("IBERejectableSBT: mint without deadline is not allowed");
+    }
+
+    function _mint(
+        address to,
+        uint256 tokenId,
+        uint256 deadlineAccept
+    ) internal virtual {
+        require(
+            to != address(0),
+            "RejectableSBTDeadline: mint to the zero address"
+        );
+        require(
+            !_exists(tokenId),
+            "RejectableSBTDeadline: token already minted"
+        );
+        require(
+            deadlineAccept > block.timestamp,
+            "RejectableSBTDeadline: deadline expired"
+        );
+
+        _minters[tokenId] = _msgSender();
+        _transferableOwners[tokenId] = to;
+        _deadlineAccept[tokenId] = deadlineAccept;
+        _states[tokenId] = State.Minted;
+
+        emit TransferRequest(_msgSender(), to, tokenId);
     }
 
     function mint(
@@ -110,6 +156,83 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         return tokenId;
     }
 
+    function acceptTransfer(uint256 tokenId) public virtual override {
+        require(
+            _transferableOwners[tokenId] == _msgSender(),
+            "RejectableSBTDeadline: accept transfer caller is not the receiver of the token"
+        );
+        require(
+            _deadlineAccept[tokenId] > block.timestamp,
+            "RejectableSBTDeadline: deadline expired"
+        );
+        require(
+            _states[tokenId] == State.Minted,
+            "RejectableSBTDeadline: token is not in minted state"
+        );
+
+        address from = minterOf(tokenId);
+        address to = _msgSender();
+
+        _balances[to] += 1;
+        _owners[tokenId] = to;
+        _states[tokenId] = State.Accepted;
+        // remove the transferable owner from the mapping
+        _transferableOwners[tokenId] = address(0);
+
+        emit AcceptTransfer(from, to, tokenId);
+    }
+
+    function rejectTransfer(uint256 tokenId) public virtual override {
+        require(
+            _transferableOwners[tokenId] == _msgSender(),
+            "RejectableSBTDeadline: reject transfer caller is not the receiver of the token"
+        );
+        require(
+            _deadlineAccept[tokenId] > block.timestamp,
+            "RejectableSBTDeadline: deadline expired"
+        );
+        require(
+            _states[tokenId] == State.Minted,
+            "IBERejectableSBT: token is not in minted state"
+        );
+
+        address from = minterOf(tokenId);
+        address to = _msgSender();
+
+        _states[tokenId] = State.Rejected;
+        _transferableOwners[tokenId] = address(0);
+
+        emit RejectTransfer(from, to, tokenId);
+    }
+
+    function cancelTransfer(uint256 tokenId) public virtual override {
+        require(
+            minterOf(tokenId) == _msgSender(),
+            "RejectableSBTDeadline: cancel transfer caller is not the minter of the token"
+        );
+        require(
+            _deadlineAccept[tokenId] > block.timestamp,
+            "RejectableSBTDeadline: deadline expired"
+        );
+        require(
+            _states[tokenId] == State.Minted,
+            "IBERejectableSBT: token is not in minted state"
+        );
+
+        address from = minterOf(tokenId);
+        address to = _transferableOwners[tokenId];
+
+        require(
+            to != address(0),
+            "RejectableSBTDeadline: token is not transferable"
+        );
+
+        _states[tokenId] = State.Cancelled;
+        _transferableOwners[tokenId] = address(0);
+
+        emit CancelTransfer(from, to, tokenId);
+    }
+
     function sendPrivateKey(
         uint256 tokenId,
         bytes memory privateKey_x,
@@ -141,6 +264,19 @@ contract IBERejectableSBT is RejectableSBTDeadline {
         emit PrivateKeySent(tokenId, privateKey_x, privateKey_y);
     }
 
+    function getDeadlineAccept(uint256 tokenId)
+        public
+        view
+        virtual
+        returns (uint256)
+    {
+        require(
+            _exists(tokenId),
+            "RejectableSBTDeadline: token does not exist"
+        );
+        return _deadlineAccept[tokenId];
+    }
+
     function getState(uint256 tokenId) public view virtual returns (IBEState) {
         _requireMinted(tokenId);
         if (_states[tokenId] == State.Rejected) {
@@ -157,7 +293,7 @@ contract IBERejectableSBT is RejectableSBTDeadline {
             } else {
                 return IBEState.Accepted;
             }
-        } else if (_deadlines[tokenId] < block.timestamp) {
+        } else if (_deadlineAccept[tokenId] < block.timestamp) {
             return IBEState.Expired;
         }
         return IBEState.Minted;
