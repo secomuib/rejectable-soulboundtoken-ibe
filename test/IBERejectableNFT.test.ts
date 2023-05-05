@@ -15,8 +15,7 @@ const RSBT_SYMBOL = "RSBT1";
 
 const algorithm = "aes-256-cbc";
 const message = "This is a secret message";
-const deadlineAccept = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
-const deadlinePrivateKey = Math.floor(Date.now() / 1000) + 60 * 30; // 30 minutes from now
+const deadline = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes from now
 
 const convertToHex = (str: string) => {
   if (str.length % 2 !== 0) {
@@ -159,8 +158,7 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadlineAccept,
-          deadlinePrivateKey,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
@@ -181,8 +179,7 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         receiver.address
       );
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
-      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKey
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(0);
     });
 
@@ -195,8 +192,7 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadlineAccept,
-          deadlinePrivateKey,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
@@ -229,8 +225,7 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         ethers.constants.AddressZero
       );
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
-      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKeyexpired
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(3);
     });
 
@@ -243,8 +238,7 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadlineAccept,
-          deadlinePrivateKey,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
@@ -277,8 +271,7 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         ethers.constants.AddressZero
       );
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
-      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKey
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(2);
     });
 
@@ -291,8 +284,7 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadlineAccept,
-          deadlinePrivateKey,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
@@ -325,8 +317,7 @@ describe("IBERejectableSBT", () => {
       expect(await ibeRejectableSBT.transferableOwnerOf(tokenId)).to.be.equal(
         ethers.constants.AddressZero
       );
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
-      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKey
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(1);
     });
   });
@@ -379,8 +370,7 @@ describe("IBERejectableSBT", () => {
         .mint(
           identity.idReceiver,
           identity.idTimestamp,
-          deadlineAccept,
-          deadlinePrivateKey,
+          deadline,
           utils.keccak256(utils.toUtf8Bytes(message)),
           utils.keccak256(utils.toUtf8Bytes(encryptedMessage)),
           convertToHex(encryptedKey.cipherU.x),
@@ -440,8 +430,7 @@ describe("IBERejectableSBT", () => {
           BigNumber.from(extractResult.privateKey.y).toHexString()
         );
 
-      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected,
-      // 3 = cancelled, 4 = privatekeysent, 5 = expiredAccept, 6 = expiredPrivateKey
+      // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = privatekeysent, 5 = expired
       expect(await ibeRejectableSBT.getState(tokenId)).to.be.equal(4);
 
       // now the receiver can decrypt the message
