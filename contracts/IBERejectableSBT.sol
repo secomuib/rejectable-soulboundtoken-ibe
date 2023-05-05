@@ -131,6 +131,10 @@ contract IBERejectableSBT is RejectableSBTDeadline {
             "IBERejectableSBT: private key already sent"
         );
         require(
+            _deadlines[tokenId] > block.timestamp,
+            "IBERejectableSBT: deadline expired"
+        );
+        require(
             _states[tokenId] == State.Accepted,
             "IBERejectableSBT: token is not in accepted state"
         );
@@ -155,7 +159,11 @@ contract IBERejectableSBT is RejectableSBTDeadline {
             ) {
                 return IBEState.PrivateKeySent;
             } else {
-                return IBEState.Accepted;
+                if (_deadlines[tokenId] < block.timestamp) {
+                    return IBEState.Expired;
+                } else {
+                    return IBEState.Accepted;
+                }
             }
         } else if (_deadlines[tokenId] < block.timestamp) {
             return IBEState.Expired;
